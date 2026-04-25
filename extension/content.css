@@ -1,0 +1,17 @@
+#jitori-overlay {
+	position: fixed !important;
+	top: 0 !important;
+	left: 0 !important;
+	width: 100% !important;
+	height: 100% !important;
+	background: rgba(0, 0, 0, 0.5) !important;
+	cursor: crosshair !important;
+	z-index: 2147483647 !important;
+}
+
+#jitori-selection {
+	position: absolute !important;
+	border: 2px solid #3b82f6 !important;
+	background: rgba(59, 130, 246, 0.2) !important;
+	pointer-events: none !important;
+}
