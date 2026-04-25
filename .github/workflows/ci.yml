@@ -10,12 +10,14 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '18.x'
+          node-version: '22.x'
           cache: 'npm'
+      - name: Create .env
+        run: cp .env.example .env
       - name: Install dependencies
         run: npm ci
       - name: Run Svelte Check
