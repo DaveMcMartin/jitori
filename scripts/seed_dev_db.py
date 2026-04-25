@@ -8,11 +8,10 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent))
 
 from d1_client import D1Config, execute_sql_file
-from import_sentences_to_d1 import build_insert_sql, CREATE_TABLE_SQL
+from import_sentences_to_d1 import build_insert_sql
 from import_dictionaries_to_d1 import (
     build_jmdict_sql, 
     build_kanjidict_sql, 
-    load_schema_sql,
     JMDictImportItem,
     KanjidictImportItem
 )
@@ -106,12 +105,6 @@ def main():
     with args.output_sql.open("w", encoding="utf-8") as f:
         f.write("PRAGMA foreign_keys = OFF;\n")
         
-        # Schema
-        f.write("-- Sentences Table\n")
-        f.write(CREATE_TABLE_SQL + "\n")
-        f.write("-- Dictionary Tables\n")
-        f.write(load_schema_sql() + "\n")
-
         # Data
         for s in seed_sentences:
             f.write(f"INSERT OR REPLACE INTO sentence (id, source, audio_path, audio_url, sentence, translation, word, word_definition, sentence_length) VALUES ('{s['id']}', '{s['source']}', '{s['audio_path']}', '{s['audio_url']}', '{s['sentence']}', '{s['translation']}', '{s['word']}', '{s['word_definition']}', {s['sentence_length']});\n")
