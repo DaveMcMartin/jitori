@@ -1,0 +1,11 @@
+PRAGMA foreign_keys = OFF;
+INSERT OR REPLACE INTO sentence (id, source, audio_path, audio_url, sentence, translation, word, word_definition, sentence_length) VALUES ('dummy_sentence_1', 'DummySource', 'dummy1.mp3', '/audio/dummy1.mp3', 'これはテストです。', 'This is a test.', 'テスト', 'test', 9);
+INSERT OR REPLACE INTO sentence (id, source, audio_path, audio_url, sentence, translation, word, word_definition, sentence_length) VALUES ('dummy_sentence_2', 'DummySource', 'dummy2.mp3', '/audio/dummy2.mp3', '私はりんごを食べる。', 'I eat an apple.', '食べる', 'to eat', 10);
+INSERT OR REPLACE INTO jmdict_entry (ent_seq, primary_kanji, primary_reading, gloss, parts_of_speech) VALUES (1000000, '食べる', 'たべる', 'to eat; to live on (e.g. a salary)', 'verb (ichidan)');
+DELETE FROM jmdict_term WHERE ent_seq = 1000000;
+INSERT OR REPLACE INTO jmdict_term (term, ent_seq, term_kind, is_primary) VALUES ('食べる', 1000000, 'kanji', 1), ('たべる', 1000000, 'reading', 1);
+INSERT OR REPLACE INTO jmdict_entry (ent_seq, primary_kanji, primary_reading, gloss, parts_of_speech) VALUES (1000001, 'テスト', 'テスト', 'test; examination', 'noun; suru verb');
+DELETE FROM jmdict_term WHERE ent_seq = 1000001;
+INSERT OR REPLACE INTO jmdict_term (term, ent_seq, term_kind, is_primary) VALUES ('テスト', 1000001, 'kanji', 1), ('テスト', 1000001, 'reading', 1);
+INSERT OR REPLACE INTO kanjidict_entry (literal, grade, jlpt, stroke_count, frequency, on_readings, kun_readings, nanori, meanings) VALUES ('食', 2, 4, 9, 242, 'ショク; ジキ', 'く.う; く.らう; た.べる; は.む', 'あき', 'eat; food');
+PRAGMA foreign_keys = ON;

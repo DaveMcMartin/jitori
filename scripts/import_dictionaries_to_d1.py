@@ -421,7 +421,7 @@ def build_kanjidict_sql(item: KanjidictImportItem) -> str:
 
 
 def load_schema_sql() -> str:
-	schema_path = Path(__file__).resolve().parent.parent / "migrations" / "dictionary" / "0001_dictionary.sql"
+	schema_path = Path(__file__).resolve().parent.parent / "migrations" / "0002_dictionary.sql"
 	return schema_path.read_text(encoding="utf-8")
 
 

@@ -24,9 +24,10 @@ type KanjiRow = {
 };
 
 export function normalizeDictionaryLimit(value: number | null | undefined): number {
-	if (!value || Number.isNaN(value)) {
+	if (value === null || value === undefined || Number.isNaN(value)) {
 		return DEFAULT_LIMIT;
 	}
+	if (value === 0) return 1;
 	return Math.max(1, Math.min(MAX_LIMIT, Math.trunc(value)));
 }
 

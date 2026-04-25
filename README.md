@@ -16,20 +16,17 @@ A Japanese sentence search application with conjugation-aware lookup, audio play
 - Python 3.12+ (for data management)
 
 ### 2. Quick Start (Development)
-After cloning the repo, run this one command to set up your local database with seed data and audio files:
-```bash
-python3 scripts/seed_dev_db.py
-```
-This script will:
-- Initialize your local D1 database.
-- Seed it with 100 sentences, 500 dictionary entries, and 50 kanji.
-- Extract the corresponding audio files to `static/audio/`.
+After cloning the repo, you can immediately start the application. The setup script now creates a local D1 database pre-populated with dummy data so you don't need to download massive dictionary files manually.
 
-Then start the app:
 ```bash
 npm install
+npm run setup
 npm run dev
 ```
+This script will:
+- Initialize your local D1 database using local `.sqlite` state.
+- Seed it with some dummy sentences, dictionary entries, and kanji for immediate local testing.
+- Create placeholder audio files in `static/audio/`.
 
 ### 3. Production Deployment
 To deploy your own instance to Cloudflare:
