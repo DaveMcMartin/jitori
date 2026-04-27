@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
-	import { Search, Play, Pause, Download, ExternalLink, Loader2, BookText, X } from 'lucide-svelte';
+	import { Search, Play, Pause, Download, ExternalLink, Loader2, BookText, X, SearchX } from 'lucide-svelte';
 	import DictionarySidebar from '$lib/components/DictionarySidebar.svelte';
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import { sentenceSearchService, type SentenceSearchExpansion } from '$lib/services/sentence-search';
@@ -57,7 +57,12 @@
 		try {
 			selectedKanji = await dictionaryService.getKanji(literal);
 		} catch (error) {
-			kanjiError = error instanceof Error ? error.message : 'Kanji lookup failed.';
+			const rawError = error instanceof Error ? error.message : 'Kanji lookup failed.';
+			if (rawError.includes('404')) {
+				kanjiError = `Kanji "${literal}" not found in our records.`;
+			} else {
+				kanjiError = rawError;
+			}
 		} finally {
 			isLoadingKanji = false;
 		}
@@ -166,7 +171,7 @@
 </script>
 
 <div class="layout">
-	<DictionarySidebar onKanjiSelect={openKanjiPopup} />
+	<DictionarySidebar onKanjiSelect={openKanjiPopup} {query} />
 	<main class="main">
 		<header class="hero">
 			<div>
@@ -287,12 +292,15 @@
 				</button>
 			</div>
 			{#if isLoadingKanji}
-				<p class="popup-loading">
-					<Loader2 size={14} class="spinner" />
-					Loading kanji entry...
-				</p>
+				<div class="popup-loading">
+					<Loader2 size={24} class="spinner" />
+					<p>Loading kanji entry...</p>
+				</div>
 			{:else if kanjiError}
-				<p class="popup-error">{kanjiError}</p>
+				<div class="popup-error">
+					<SearchX size={32} />
+					<p>{kanjiError}</p>
+				</div>
 			{:else if selectedKanji}
 				<div class="kanji-content">
 					<div class="kanji-literal">{selectedKanji.literal}</div>
@@ -574,25 +582,44 @@
 		border: 1px solid #334155;
 		background: #0f172a;
 		color: #e2e8f0;
-		border-radius: 0.5rem;
-		width: 1.8rem;
-		height: 1.8rem;
+		border-radius: 0.55rem;
+		width: 2rem;
+		height: 2rem;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
 		cursor: pointer;
+		transition: all 0.2s;
+	}
+
+	.close-btn:hover {
+		border-color: #ef4444;
+		color: #ef4444;
 	}
 
 	.popup-loading,
 	.popup-error {
-		font-size: 0.85rem;
-		display: inline-flex;
+		display: flex;
+		flex-direction: column;
 		align-items: center;
-		gap: 0.35rem;
+		justify-content: center;
+		padding: 2.5rem 1rem;
+		gap: 1rem;
+		text-align: center;
+	}
+
+	.popup-loading p {
+		font-size: 0.9rem;
+		color: #94a3b8;
 	}
 
 	.popup-error {
 		color: #f87171;
+	}
+
+	.popup-error p {
+		font-size: 0.9rem;
+		line-height: 1.5;
 	}
 
 	.kanji-content {
