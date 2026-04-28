@@ -106,8 +106,6 @@
 		};
 
 		try {
-			// Some browsers block play() if it's not directly in the stack of a user interaction.
-			// handlePlay is called from onclick, so it should be fine, but we use a local variable to be sure.
 			await player.play();
 		} catch (err) {
 			console.error('Playback error:', err);
@@ -137,7 +135,6 @@
 		try {
 			const input = buildAnkiInput(sentence);
 			
-			// Improve definition by fetching from dictionary
 			try {
 				const dictResult = await dictionaryService.search(input.word, 1);
 				if (dictResult.entries.length > 0) {

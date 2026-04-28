@@ -12,6 +12,7 @@
 	let kanji = $state<KanjiEntry[]>([]);
 	let isSearching = $state(false);
 	let errorMessage = $state('');
+	let contentElement = $state<HTMLElement | null>(null);
 
 	async function searchDictionary(searchTerm: string) {
 		errorMessage = '';
@@ -26,6 +27,9 @@
 			const result = await dictionaryService.search(normalized, 25);
 			entries = result.entries;
 			kanji = result.kanji;
+			if (contentElement) {
+				contentElement.scrollTo({ top: 0, behavior: 'smooth' });
+			}
 		} catch (error) {
 			entries = [];
 			kanji = [];
@@ -50,7 +54,7 @@
 		<p class="error">{errorMessage}</p>
 	{/if}
 
-	<div class="content">
+	<div class="content" bind:this={contentElement}>
 		{#if isSearching}
 			<div class="empty-state">
 				<Loader2 size={32} class="spin" />
