@@ -39,11 +39,31 @@ function splitField(value: string): string[] {
 }
 
 function mapDictionaryRow(row: DictionaryRow): DictionaryEntry {
+	let gloss = row.gloss;
+	try {
+		const parsed = JSON.parse(row.gloss);
+		if (Array.isArray(parsed)) {
+			gloss = parsed
+				.map((item) => {
+					if (typeof item === 'string') return item;
+					if (item.content) {
+						if (typeof item.content === 'string') return item.content;
+						if (Array.isArray(item.content)) return item.content.join('');
+					}
+					return JSON.stringify(item);
+				})
+				.join('; ');
+		} else if (typeof parsed === 'object' && parsed !== null) {
+			gloss = parsed.content || JSON.stringify(parsed);
+		}
+	} catch {
+	}
+
 	return {
 		entSeq: row.ent_seq,
 		primaryKanji: row.primary_kanji,
 		primaryReading: row.primary_reading,
-		gloss: row.gloss,
+		gloss: gloss,
 		partsOfSpeech: splitField(row.parts_of_speech)
 	};
 }

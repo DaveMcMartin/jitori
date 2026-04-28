@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import html
 import io
+import json
 import re
 import sqlite3
 import subprocess
@@ -168,6 +169,16 @@ def parse_anki_media_entry(payload: bytes) -> AnkiMediaEntry:
 
 
 def parse_anki_media_manifest(payload: bytes) -> dict[str, AnkiMediaEntry]:
+	try:
+		data = json.loads(payload.decode("utf-8"))
+		if isinstance(data, dict):
+			return {
+				str(filename): AnkiMediaEntry(filename=str(filename), member_name=str(member), checksum="")
+				for member, filename in data.items()
+			}
+	except (json.JSONDecodeError, UnicodeDecodeError):
+		pass
+
 	offset = 0
 	entries: dict[str, AnkiMediaEntry] = {}
 	while offset < len(payload):
