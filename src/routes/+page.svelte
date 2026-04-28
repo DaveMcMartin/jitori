@@ -10,6 +10,7 @@
 	import type { AnkiNoteInput, KanjiEntry, StoredSentence } from '$lib/types';
 
 	let query = $state('');
+	let sidebarQuery = $state('');
 	let expansion = $state<SentenceSearchExpansion | null>(null);
 	let results = $state<StoredSentence[]>([]);
 	let isSearching = $state(false);
@@ -32,12 +33,10 @@
 	}
 
 	function stopAudio() {
-		if (!audioPlayer) {
-			activeAudioId = null;
-			return;
+		if (audioPlayer) {
+			audioPlayer.pause();
+			audioPlayer.currentTime = 0;
 		}
-		audioPlayer.pause();
-		audioPlayer.currentTime = 0;
 		audioPlayer = null;
 		activeAudioId = null;
 	}
@@ -88,22 +87,31 @@
 		stopAudio();
 		clearMessages();
 
-		audioPlayer = new Audio(audioUrl);
+		const player = new Audio(audioUrl);
+		audioPlayer = player;
 		activeAudioId = sentence.id;
-		audioPlayer.onended = () => {
-			activeAudioId = null;
-			audioPlayer = null;
+		
+		player.onended = () => {
+			if (activeAudioId === sentence.id) {
+				activeAudioId = null;
+				audioPlayer = null;
+			}
 		};
-		audioPlayer.onerror = () => {
-			errorMessage = 'Failed to play audio.';
-			activeAudioId = null;
-			audioPlayer = null;
+		player.onerror = () => {
+			if (activeAudioId === sentence.id) {
+				errorMessage = 'Failed to play audio.';
+				activeAudioId = null;
+				audioPlayer = null;
+			}
 		};
 
 		try {
-			await audioPlayer.play();
-		} catch {
-			errorMessage = 'Playback was blocked by the browser.';
+			// Some browsers block play() if it's not directly in the stack of a user interaction.
+			// handlePlay is called from onclick, so it should be fine, but we use a local variable to be sure.
+			await player.play();
+		} catch (err) {
+			console.error('Playback error:', err);
+			errorMessage = 'Playback was blocked by the browser. Try clicking again.';
 			stopAudio();
 		}
 	}
@@ -114,8 +122,7 @@
 			sentence: sentence.sentence,
 			translation: sentence.translation,
 			word: detectedWord,
-			wordDefinition: expansion ? `Part of speech: ${expansion.partOfSpeech}` : '',
-			image: ''
+			wordDefinition: expansion ? `Part of speech: ${expansion.partOfSpeech}` : ''
 		};
 	}
 
@@ -128,8 +135,21 @@
 
 		isExporting = sentence.id;
 		try {
+			const input = buildAnkiInput(sentence);
+			
+			// Improve definition by fetching from dictionary
+			try {
+				const dictResult = await dictionaryService.search(input.word, 1);
+				if (dictResult.entries.length > 0) {
+					const entry = dictResult.entries[0];
+					input.wordDefinition = entry.gloss;
+				}
+			} catch (e) {
+				console.warn('Failed to fetch dictionary definition for Anki', e);
+			}
+
 			ankiService.setUrl($configStore.anki.url);
-			await ankiService.openAddCard($configStore.anki, buildAnkiInput(sentence));
+			await ankiService.openAddCard($configStore.anki, input);
 			statusMessage = 'Anki Add window opened.';
 		} catch (error) {
 			errorMessage = error instanceof Error ? error.message : 'Failed to open Anki.';
@@ -141,6 +161,7 @@
 	async function handleSearch() {
 		clearMessages();
 		const normalized = query.trim();
+		sidebarQuery = normalized;
 		if (!normalized) {
 			results = [];
 			expansion = null;
@@ -171,9 +192,10 @@
 </script>
 
 <div class="layout">
-	<DictionarySidebar onKanjiSelect={openKanjiPopup} {query} />
+	<DictionarySidebar onKanjiSelect={openKanjiPopup} query={sidebarQuery} />
 	<main class="main">
 		<header class="hero">
+			<img src="/app-icon.svg" alt="Jitori Logo" class="app-logo" />
 			<div>
 				<h1>Jitori Sentence Bank</h1>
 				<p>Find real Japanese example sentences fast, with audio and one-click Anki export.</p>
@@ -349,6 +371,20 @@
 		background:
 			radial-gradient(circle at top right, rgba(37, 99, 235, 0.15), transparent 45%),
 			#020617;
+	}
+
+	.hero {
+		display: flex;
+		align-items: center;
+		gap: 1.25rem;
+		margin-bottom: 0.5rem;
+	}
+
+	.app-logo {
+		width: 52px;
+		height: 52px;
+		border-radius: 12px;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 	}
 
 	.hero h1 {
