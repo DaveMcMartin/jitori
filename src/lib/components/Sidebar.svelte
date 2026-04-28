@@ -196,16 +196,6 @@
 						{/each}
 					</select>
 				</div>
-
-				<div class="field">
-					<label for="field-image">Image</label>
-					<select id="field-image" bind:value={$configStore.anki.fields.image}>
-						<option value="">-- None --</option>
-						{#each noteFields as field}
-							<option value={field}>{field}</option>
-						{/each}
-					</select>
-				</div>
 			</div>
 		{/if}
 	</div>

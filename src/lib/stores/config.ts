@@ -10,8 +10,7 @@ export const defaultConfig: AppConfig = {
 			sentence: '',
 			translation: '',
 			word: '',
-			wordDefinition: '',
-			image: ''
+			wordDefinition: ''
 		}
 	}
 };
