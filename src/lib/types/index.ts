@@ -14,7 +14,6 @@ export interface AnkiConfig {
 		translation: string;
 		word: string;
 		wordDefinition: string;
-		image?: string;
 	};
 }
 
@@ -23,7 +22,6 @@ export interface AnkiNoteInput {
 	translation: string;
 	word: string;
 	wordDefinition: string;
-	image?: string;
 }
 
 export interface StoredSentence {
