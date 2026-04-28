@@ -4,136 +4,105 @@ import os
 import subprocess
 from pathlib import Path
 
-# Add scripts directory to path to import other script logic
-sys.path.append(str(Path(__file__).parent))
-
-from d1_client import D1Config, execute_sql_file
-from import_sentences_to_d1 import build_insert_sql
-from import_dictionaries_to_d1 import (
-    build_jmdict_sql, 
-    build_kanjidict_sql, 
-    JMDictImportItem,
-    KanjidictImportItem
-)
-
 def main():
-    parser = argparse.ArgumentParser(description="Seed local development database with a small subset of dummy data.")
+    parser = argparse.ArgumentParser(description="Seed local development database with real production samples.")
     parser.add_argument("--output-sql", type=Path, default=Path("data/seed_dev.sql"))
-    parser.add_argument("--audio-dir", type=Path, default=Path("static/audio"))
     args = parser.parse_args()
 
-    # Ensure directories exist
     args.output_sql.parent.mkdir(parents=True, exist_ok=True)
-    args.audio_dir.mkdir(parents=True, exist_ok=True)
 
-    print("--- Seeding Development Database with Dummy Data ---")
+    print("--- Seeding Dev Environment with 50 Production Samples ---")
 
-    # 1. Generate Dummy Sentences
-    seed_sentences = [
-        {
-            "id": "dummy_sentence_1",
-            "source": "DummySource",
-            "audio_path": "dummy1.mp3",
-            "audio_url": "/audio/dummy1.mp3",
-            "sentence": "これはテストです。",
-            "translation": "This is a test.",
-            "word": "テスト",
-            "word_definition": "test",
-            "sentence_length": 9
-        },
-        {
-            "id": "dummy_sentence_2",
-            "source": "DummySource",
-            "audio_path": "dummy2.mp3",
-            "audio_url": "/audio/dummy2.mp3",
-            "sentence": "私はりんごを食べる。",
-            "translation": "I eat an apple.",
-            "word": "食べる",
-            "word_definition": "to eat",
-            "sentence_length": 10
-        }
+    sentences = [
+        {"id": "0f07f0ea66a1b5f32daab8701fbd4475871c7921", "source": "nihongoshark", "audio_path": "NDL_0001_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0001_Male.ogg", "sentence": "奥歯痛い。", "translation": "One of my back teeth hurts.\nback tooth + painful", "word": "", "word_definition": "", "sentence_length": 5},
+        {"id": "b59fa94b5770124112f53cce3bc0637c248e8faf", "source": "nihongoshark", "audio_path": "NDL_0002_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0002_Male.ogg", "sentence": "冷蔵庫の奥にある。", "translation": "It's in the back of the fridge.\nrefrigerator + の + deep inside / back + にある", "word": "", "word_definition": "", "sentence_length": 9},
+        {"id": "20f7d7bb71c861940660e3cae0858c81d1ec1e86", "source": "nihongoshark", "audio_path": "NDL_0003_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0003_Male.ogg", "sentence": "歯綺麗だね。", "translation": "You have nice teeth.\nteeth + pretty + are + ね", "word": "", "word_definition": "", "sentence_length": 6},
+        {"id": "8aa5556d1230e4264b6bc5aecef9a40ff52ebbdd", "source": "nihongoshark", "audio_path": "NDL_0004_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0004_Male.ogg", "sentence": "前歯折れた。", "translation": "I chipped my front tooth.\nfront tooth + broke", "word": "", "word_definition": "", "sentence_length": 6},
+        {"id": "a34a410826617eb51b0b05b97c8572f87b91b94e", "source": "nihongoshark", "audio_path": "NDL_0005_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0005_Male.ogg", "sentence": "歯医者さん行かなきゃ。", "translation": "I need to go to the dentist.\ndentist-san + に + need to go", "word": "", "word_definition": "", "sentence_length": 11},
+        {"id": "9beab721159cbb178f6c1ccb6bda31b58f683ecf", "source": "nihongoshark", "audio_path": "NDL_0006_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0006_Male.ogg", "sentence": "うがいしてください。", "translation": "Please rinse out your mouth.\nPlease gargle.", "word": "", "word_definition": "", "sentence_length": 10},
+        {"id": "8ce1225c594524823f8df898f71d0dffaae27a52", "source": "nihongoshark", "audio_path": "NDL_0007_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0007_Male.ogg", "sentence": "歯科衛生士なりたい。", "translation": "I want to become a dental hygienist.\ndental hygeniest + want to become", "word": "", "word_definition": "", "sentence_length": 11},
+        {"id": "16c542a32713115d7fdf2972f5cd1c4276505ca6", "source": "nihongoshark", "audio_path": "NDL_0008_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0008_Male.ogg", "sentence": "ゆすいでください。", "translation": "Please rinse out your mouth.\nrinse + please", "word": "", "word_definition": "", "sentence_length": 9},
+        {"id": "2d6b61a97cd5dc71e457a7899f91774f621c9523", "source": "nihongoshark", "audio_path": "NDL_0009_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0009_Male.ogg", "sentence": "タイ料理食べたい。", "translation": "I want to eat Thai food.\nThai cooking + want to eat", "word": "", "word_definition": "", "sentence_length": 9},
+        {"id": "aaadd6efaa329924842799ed27027cb0428dd6f0", "source": "nihongoshark", "audio_path": "NDL_0010_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0010_Male.ogg", "sentence": "料理得意？", "translation": "Are you good at cooking?\ncooking + skilled?", "word": "", "word_definition": "", "sentence_length": 5},
+        {"id": "1d772d1acf497eea8ea8a556416c2e36ae8f9893", "source": "nihongoshark", "audio_path": "NDL_0011_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0011_Male.ogg", "sentence": "来週韓国行くんだ。", "translation": "I'm going to Korea next week.\nnext week + Korea + go + んだ", "word": "", "word_definition": "", "sentence_length": 9},
+        {"id": "8e3bf0f60d0ad04b715bbe3f4c2d66ff2ce24d62", "source": "nihongoshark", "audio_path": "NDL_0012_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0012_Male.ogg", "sentence": "韓国料理大好き。", "translation": "I love Korean food.\nKorean cooking + liking a lot / loving", "word": "", "word_definition": "", "sentence_length": 8},
+        {"id": "4c1a07a5aee6481b5aaa2dac94d3ce81d6042487", "source": "nihongoshark", "audio_path": "NDL_0014_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0014_Male.ogg", "sentence": "フランス料理苦手。", "translation": "I don't really like French food. // I'm not good at making French food.\nFrench cooking + not skilled", "word": "", "word_definition": "", "sentence_length": 9},
+        {"id": "f438b5e94868ea3f8488293f94647606a29d8a37", "source": "nihongoshark", "audio_path": "NDL_0015_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0015_Male.ogg", "sentence": "イタリアってどこ？", "translation": "Where's Italy, exactly?\nItaly + って + where?", "word": "", "word_definition": "", "sentence_length": 9},
+        {"id": "62a6e5d5798eb67be40c11220f57c2447538f02b", "source": "nihongoshark", "audio_path": "NDL_0016_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0016_Male.ogg", "sentence": "イタリア料理おいしいよね。", "translation": "Italian food is good, huh?\nItalian cooking + delicious + よね", "word": "", "word_definition": "", "sentence_length": 13},
+        {"id": "e310e5386b9a53336e744b5a63f04028657c96b2", "source": "nihongoshark", "audio_path": "NDL_0017_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0017_Male.ogg", "sentence": "中国から来ました。", "translation": "I'm from China.\nChina + from + came", "word": "", "word_definition": "", "sentence_length": 9},
+        {"id": "11930503036808443d4af01d95e591c4f40678a3", "source": "nihongoshark", "audio_path": "NDL_0018_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0018_Male.ogg", "sentence": "おいしい中華料理屋知ってる？", "translation": "Do you know any good Chinese restaurants?\ndelicious + Chinese cooking shop + are knowing?", "word": "", "word_definition": "", "sentence_length": 14},
+        {"id": "8eea68848d1ecaff373934654986ce5e028cc1fe", "source": "nihongoshark", "audio_path": "NDL_0019_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0019_Male.ogg", "sentence": "日本が恋しい。", "translation": "I miss Japan.\nJapan + が + missed / wanted / longed for", "word": "", "word_definition": "", "sentence_length": 7},
+        {"id": "7e6f468752afeee8fb51039b5bc5e19c5d45be75", "source": "nihongoshark", "audio_path": "NDL_0020_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0020_Male.ogg", "sentence": "朝はいつも和食。", "translation": "I always have Japanese food for breakfast.\nmorning + は + always + Japanese food", "word": "", "word_definition": "", "sentence_length": 8},
+        {"id": "25ec4d2e1ba2c6a7e357a7d57991430c9dab06c7", "source": "nihongoshark", "audio_path": "NDL_0021_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0021_Male.ogg", "sentence": "日ノ出町駅の近くに住んでる。", "translation": "I live near Hinodecho Station.\nHinodecho Station + の + near + に + am living", "word": "", "word_definition": "", "sentence_length": 14},
+        {"id": "a1796c315989f700861264d8f81bd49863b1486b", "source": "nihongoshark", "audio_path": "NDL_0022_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0022_Male.ogg", "sentence": "この店２４時間営業だって。", "translation": "It says this restaurant is open 24 hours.\nthis + shop + 24 hours + doing business + is + って", "word": "", "word_definition": "", "sentence_length": 13},
+        {"id": "b1c20c295a9821fe46dee08f7f39ff86ac8c5a09", "source": "nihongoshark", "audio_path": "NDL_0023_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0023_Male.ogg", "sentence": "まだ準備中だ。", "translation": "It's not open yet.\nstill + preparing + is", "word": "", "word_definition": "", "sentence_length": 7},
+        {"id": "c6cf7326595219ac7c9dcbeca02279f031194d68", "source": "nihongoshark", "audio_path": "NDL_0024_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0024_Male.ogg", "sentence": "営業の仕事をしてます。", "translation": "I work in sales.\nsale / business + の + job / work + を + am doing", "word": "", "word_definition": "", "sentence_length": 11},
+        {"id": "34a4d2b8e1fd24f1f901972641a9f47b7c53ed0a", "source": "nihongoshark", "audio_path": "NDL_0025_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0025_Male.ogg", "sentence": "営業マンです。", "translation": "I'm a salesperson.\nsalesman + am", "word": "", "word_definition": "", "sentence_length": 7},
+        {"id": "e649a1ea39f1a054771dd14bc7bc98fbc8b335b1", "source": "nihongoshark", "audio_path": "NDL_0026_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0026_Male.ogg", "sentence": "ビール二つください。", "translation": "Two beers, please.\nbeer, two, please.", "word": "", "word_definition": "", "sentence_length": 10},
+        {"id": "a4d81fb3debc6dd4db319c9dce855d7ddeff157a", "source": "nihongoshark", "audio_path": "NDL_0027_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0027_Male.ogg", "sentence": "勝手なこと言わないでよ。", "translation": "Don't be so selfish / inconsiderate.\nselfish + thing(s) + don't say + よ", "word": "", "word_definition": "", "sentence_length": 12},
+        {"id": "680365307fd8dc3eb8bc63050edede17b53e4665", "source": "nihongoshark", "audio_path": "NDL_0028_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0028_Male.ogg", "sentence": "勝手に取ってください。", "translation": "Please take them freely.\nas you please + に + take + please", "word": "", "word_definition": "", "sentence_length": 11},
+        {"id": "ada221227e423b76af00b2bf2ea0c6115553af4a", "source": "nihongoshark", "audio_path": "NDL_0029_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0029_Male.ogg", "sentence": "お互いっていうか、僕の右手はお前が勝手に食べちゃったんだろ。", "translation": "Both of us?! You're the one who ate my right hand without even asking first!\nboth of us + っていうか + I + の right hand + は + you + が + as you please + ate + んだろ", "word": "", "word_definition": "", "sentence_length": 30},
+        {"id": "7919952081cb09eae54b09c946308fe2b7463127", "source": "nihongoshark", "audio_path": "NDL_0030_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0030_Male.ogg", "sentence": "5 時以後は勝手にしてよろしい。", "translation": "You can do whatever you like after five o'clock.\nfive o'clock + after + は + as you wish + do + good (formal)", "word": "", "word_definition": "", "sentence_length": 16},
+        {"id": "2fb34a91ed27e38c6e5337bbdfdcd78c1f858481", "source": "nihongoshark", "audio_path": "NDL_0031_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0031_Male.ogg", "sentence": "自分で取ってください。", "translation": "Please grab them yourselves.\nby yourself, take, please.", "word": "", "word_definition": "", "sentence_length": 11},
+        {"id": "67621d5191d87992453227e2073d277ef8e824fd", "source": "nihongoshark", "audio_path": "NDL_0032_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0032_Male.ogg", "sentence": "飲み物はセルフサービスになっております。", "translation": "Drinks are self-serve.\ndrinks, は, self-service, に, are becoming.", "word": "", "word_definition": "", "sentence_length": 20},
+        {"id": "9684965e6ccbe8c1953c4ab12dcfbd42138dbe3a", "source": "nihongoshark", "audio_path": "NDL_0033_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0033_Male.ogg", "sentence": "父は外で待っております。", "translation": "My father is waiting outside.\nfather + は + outside + で + is waiting (humble)", "word": "", "word_definition": "", "sentence_length": 12},
+        {"id": "82a07fcde99aa05484a58a699ab098089cf65356", "source": "nihongoshark", "audio_path": "NDL_0034_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0034_Male.ogg", "sentence": "いつもお世話になっております。", "translation": "Thank you for always helping me out.\nalways + taking care + に + am (humbly) becoming", "word": "", "word_definition": "", "sentence_length": 15},
+        {"id": "c8e9f6a882c206f22b1b4b5abdf909b160e3ddeb", "source": "nihongoshark", "audio_path": "NDL_0035_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0035_Male.ogg", "sentence": "今やっています。", "translation": "I'm doing it now.\nnow + am doing", "word": "", "word_definition": "", "sentence_length": 8},
+        {"id": "0200d5a72e0a58de71f3e126710b5ac2a4b30662", "source": "nihongoshark", "audio_path": "NDL_0038_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0038_Male.ogg", "sentence": "助けた。", "translation": "I saved you.\nsaved", "word": "", "word_definition": "", "sentence_length": 4},
+        {"id": "05ff9012f18759f7b2f1cff63f3cbc2291e63ec9", "source": "nihongoshark", "audio_path": "NDL_0039_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0039_Male.ogg", "sentence": "どうか助かってください。", "translation": "Please let him be okay.\nsomehow or other + save + please", "word": "", "word_definition": "", "sentence_length": 12},
+        {"id": "86cd105de4805b36f395b549dcc2c765e8ea66d3", "source": "nihongoshark", "audio_path": "NDL_0040_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0040_Male.ogg", "sentence": "ありがとう。助けになったよ。", "translation": "Thanks. You've been a big help.\nThank you. (What you did) became saving.", "word": "", "word_definition": "", "sentence_length": 14},
+        {"id": "cca51684488054457442e3c229ef11320f517ce0", "source": "nihongoshark", "audio_path": "NDL_0041_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0041_Male.ogg", "sentence": "どれだ？…これか！", "translation": "Which one is it? This one!\nwhich + is? + this + か!", "word": "", "word_definition": "", "sentence_length": 9},
+        {"id": "cd38b746c192e9fafb5a79c6ff63cc755ead0a63", "source": "nihongoshark", "audio_path": "NDL_0042_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0042_Male.ogg", "sentence": "俺か？ 俺の目的は ずばり…金さ。", "translation": "Me? I'll make it short. I want... money!\nI + か? + I + の + goal + は + frankly + money + さ", "word": "", "word_definition": "", "sentence_length": 17},
+        {"id": "1723111d4d16e5500664e13b6157791bd458d489", "source": "nihongoshark", "audio_path": "NDL_0043_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0043_Male.ogg", "sentence": "母さんか、そんな人のことはどうでもいいだろ。", "translation": "Mom, huh? Who cares about someone like that.\nmom + か, + that kind of + person + のことは + whatever is fine + だろ", "word": "", "word_definition": "", "sentence_length": 22},
+        {"id": "5d9fa74fd30f7f1fcf7d1fee0d94145dba3b6952", "source": "nihongoshark", "audio_path": "NDL_0044_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0044_Male.ogg", "sentence": "大丈夫か？タクヤ！！", "translation": "Are you okay? Takuya!\nOK + か？ + Takuya!", "word": "", "word_definition": "", "sentence_length": 10},
+        {"id": "43d72a5a3e54b4464746ec49ea21c493bf13e03f", "source": "nihongoshark", "audio_path": "NDL_0046_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0046_Male.ogg", "sentence": "お前か？", "translation": "Oh, it's you.\nYou + か?", "word": "", "word_definition": "", "sentence_length": 4},
+        {"id": "cf7c9ce0f2cda78ac483a63ef5242c808f0f8a2e", "source": "nihongoshark", "audio_path": "NDL_0047_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0047_Male.ogg", "sentence": "マンスリーマンションって超便利。", "translation": "Monthly apartments are so convenient.\nmonthly mansion + って + super-convenient", "word": "", "word_definition": "", "sentence_length": 16},
+        {"id": "f165bf278a927819559285d9236f079604e7608f", "source": "nihongoshark", "audio_path": "NDL_0048_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0048_Male.ogg", "sentence": "新築マンションがいいです。", "translation": "I'd prefer an apartment in a new building.\nnew building + mansion (=apartment) + が + good + is", "word": "", "word_definition": "", "sentence_length": 13},
+        {"id": "595cdb73145f4f33fedf652f4bc614a112831f44", "source": "nihongoshark", "audio_path": "NDL_0049_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0049_Male.ogg", "sentence": "今アパート探してるの。", "translation": "I'm looking for an apartment.\nnow + apartment + am looking + の", "word": "", "word_definition": "", "sentence_length": 11},
+        {"id": "41d39f1a452e5fff369fc74ab1fa807eb4bde120", "source": "nihongoshark", "audio_path": "NDL_0050_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0050_Male.ogg", "sentence": "アパートメントの略がアパートだよ。", "translation": "\"Apaato\" is short for \"apaatamento.\"\napaatomento + の + abbreviation + が + apaato + is + よ", "word": "", "word_definition": "", "sentence_length": 17},
+        {"id": "f474bab8678c678165cb2c058c85017854733404", "source": "nihongoshark", "audio_path": "NDL_0051_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0051_Male.ogg", "sentence": "寝坊した。", "translation": "I overslept.\noversleeping + did", "word": "", "word_definition": "", "sentence_length": 5},
+        {"id": "9bcbba4dc61b684b1face7e57d0f031fb70a78f0", "source": "nihongoshark", "audio_path": "NDL_0052_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0052_Male.ogg", "sentence": "夜更かししちゃった。", "translation": "I stayed up late.\nstaying up late + did", "word": "", "word_definition": "", "sentence_length": 10},
+        {"id": "0f9ec6118b2b600acbd74d009563bb731e18a804", "source": "nihongoshark", "audio_path": "NDL_0053_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0053_Male.ogg", "sentence": "無駄遣いしてしまった。", "translation": "I wasted my money.\nwasting + did", "word": "", "word_definition": "", "sentence_length": 11},
+        {"id": "2979df1f11d6761637f542f4390ad3dd73bb08e4", "source": "nihongoshark", "audio_path": "NDL_0054_Male.ogg", "audio_url": "https://jitori-storage.davidmartins.net/NDL_0054_Male.ogg", "sentence": "また同じ間違いをしてしまいました。", "translation": "I made the same mistake again.\nagain + same + mistake + を + did", "word": "", "word_definition": "", "sentence_length": 17}
     ]
 
-    # Create dummy audio files
-    for s in seed_sentences:
-        dummy_audio = args.audio_dir / s["audio_path"]
-        with open(dummy_audio, "wb") as f:
-            f.write(b"dummy audio content")
-
-    # 2. Generate Dummy JMdict
-    jm_items = [
-        JMDictImportItem(
-            item_id="1000000",
-            ent_seq=1000000,
-            primary_kanji="食べる",
-            primary_reading="たべる",
-            gloss="to eat; to live on (e.g. a salary)",
-            parts_of_speech=["verb (ichidan)"],
-            terms_kanji=["食べる"],
-            terms_reading=["たべる"]
-        ),
-        JMDictImportItem(
-            item_id="1000001",
-            ent_seq=1000001,
-            primary_kanji="テスト",
-            primary_reading="テスト",
-            gloss="test; examination",
-            parts_of_speech=["noun", "suru verb"],
-            terms_kanji=["テスト"],
-            terms_reading=["テスト"]
-        )
+    jm_entries = [
+        {"ent_seq": 1358280, "kanji": "食べる", "reading": "たべる", "gloss": "to eat; to live on (e.g. a salary); to live off; to subsist on", "pos": "verb (ichidan)"}
     ]
 
-    # 3. Generate Dummy KANJIDICT
-    kj_items = [
-        KanjidictImportItem(
-            item_id="食",
-            literal="食",
-            grade=2,
-            jlpt=4,
-            stroke_count=9,
-            frequency=242,
-            on_readings=["ショク", "ジキ"],
-            kun_readings=["く.う", "く.らう", "た.べる", "は.む"],
-            nanori=["あき"],
-            meanings=["eat", "food"]
-        )
+    kanji_entries = [
+        {"literal": "食", "grade": 2, "jlpt": 4, "stroke": 9, "freq": 328, "on": "ショク; ジキ", "kun": "く.う; く.らう; た.べる; は.む", "meanings": "eat; food"},
+        {"literal": "学", "grade": 1, "jlpt": 4, "stroke": 8, "freq": 63, "on": "ガク", "kun": "まな.ぶ", "meanings": "study; learning; science"},
+        {"literal": "校", "grade": 1, "jlpt": 4, "stroke": 10, "freq": 294, "on": "コウ; キョウ", "kun": "", "meanings": "exam; school; printing; proof; correction"}
     ]
 
-    # 4. Generate SQL
     print(f"Generating SQL: {args.output_sql}")
     with args.output_sql.open("w", encoding="utf-8") as f:
         f.write("PRAGMA foreign_keys = OFF;\n")
-        
-        # Data
-        for s in seed_sentences:
-            f.write(f"INSERT OR REPLACE INTO sentence (id, source, audio_path, audio_url, sentence, translation, word, word_definition, sentence_length) VALUES ('{s['id']}', '{s['source']}', '{s['audio_path']}', '{s['audio_url']}', '{s['sentence']}', '{s['translation']}', '{s['word']}', '{s['word_definition']}', {s['sentence_length']});\n")
-        
-        for item in jm_items:
-            f.write(build_jmdict_sql(item) + "\n")
-            
-        for item in kj_items:
-            f.write(build_kanjidict_sql(item) + "\n")
-            
+        f.write("DELETE FROM sentence;\n")
+        f.write("DELETE FROM jmdict_entry;\n")
+        f.write("DELETE FROM jmdict_term;\n")
+        f.write("DELETE FROM kanjidict_entry;\n")
+
+        for s in sentences:
+            sentence_esc = s["sentence"].replace("'", "''")
+            translation_esc = s["translation"].replace("'", "''")
+            f.write(f"INSERT INTO sentence (id, source, audio_path, audio_url, sentence, translation, word, word_definition, sentence_length) VALUES ('{s['id']}', '{s['source']}', '{s['audio_path']}', '{s['audio_url']}', '{sentence_esc}', '{translation_esc}', '{s['word']}', '{s['word_definition']}', {s['sentence_length']});\n")
+
+        for e in jm_entries:
+            gloss_esc = e["gloss"].replace("'", "''")
+            f.write(f"INSERT INTO jmdict_entry (ent_seq, primary_kanji, primary_reading, gloss, parts_of_speech) VALUES ({e['ent_seq']}, '{e['kanji']}', '{e['reading']}', '{gloss_esc}', '{e['pos']}');\n")
+            f.write(f"INSERT INTO jmdict_term (term, ent_seq, term_kind, is_primary) VALUES ('{e['kanji']}', {e['ent_seq']}, 'kanji', 1);\n")
+
+        for k in kanji_entries:
+            meanings_esc = k["meanings"].replace("'", "''")
+            f.write(f"INSERT INTO kanjidict_entry (literal, grade, jlpt, stroke_count, frequency, on_readings, kun_readings, nanori, meanings) VALUES ('{k['literal']}', {k['grade']}, {k['jlpt']}, {k['stroke']}, {k['freq']}, '{k['on']}', '{k['kun']}', '', '{meanings_esc}');\n")
+
         f.write("PRAGMA foreign_keys = ON;\n")
 
-    # 5. Execute against local D1
     print("Executing SQL against local D1...")
-    from import_sentences_to_d1 import load_wrangler_config
-    config_data = load_wrangler_config()
-    
-    db_id = "jitori"
-    
-    # Run wrangler command directly to avoid python json parsing overhead for dev seed
-    cmd = ["npx", "wrangler", "d1", "execute", db_id, "--local", f"--file={args.output_sql}", "--yes"]
-    
-    try:
-        subprocess.run(cmd, check=True)
-        print("\n✅ Success! Local development environment seeded.")
-        print(f"Sentences audio available in: {args.audio_dir}")
-        print("\nYou can now run 'npm run dev' and see your data.")
-    except Exception as e:
-        print(f"\n❌ Error seeding database: {e}")
+    subprocess.run(["npx", "wrangler", "d1", "execute", "jitori", "--local", f"--file={args.output_sql}", "--yes"], check=True)
+    print("\n✅ Success! Local environment seeded with 50 real production samples.")
 
 if __name__ == "__main__":
     main()

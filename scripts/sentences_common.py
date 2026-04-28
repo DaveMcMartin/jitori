@@ -335,5 +335,8 @@ class AnkiDeckArchive:
 			raise RuntimeError("Anki deck archive is not open")
 		if "media" not in self.archive.namelist():
 			return {}
-		compressed_payload = self.archive.read("media")
-		return parse_anki_media_manifest(decompress_zstd_bytes(compressed_payload))
+		payload = self.archive.read("media")
+		try:
+			return parse_anki_media_manifest(payload)
+		except Exception:
+			return parse_anki_media_manifest(decompress_zstd_bytes(payload))
