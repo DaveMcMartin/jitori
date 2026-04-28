@@ -42,18 +42,7 @@ export class AnkiService {
 		if (config.fields.word) fields[config.fields.word] = note.word;
 		if (config.fields.wordDefinition) fields[config.fields.wordDefinition] = note.wordDefinition;
 
-		const media: Array<{ data: string; filename: string; fields: string[] }> = [];
-		if (note.image && note.image.startsWith('data:image/') && config.fields.image) {
-			const imageData = note.image.replace(/^data:image\/\w+;base64,/, '');
-			media.push({
-				data: imageData,
-				filename: `jitori-${Date.now()}.png`,
-				fields: [config.fields.image]
-			});
-			fields[config.fields.image] = '';
-		} else if (config.fields.image) {
-			fields[config.fields.image] = note.image;
-		}
+
 
 		const result = await this.request('addNote', {
 			note: {
@@ -64,7 +53,7 @@ export class AnkiService {
 					allowDuplicate: false,
 					duplicateScope: 'deck'
 				},
-				...(media.length > 0 && { picture: media })
+
 			}
 		});
 
@@ -93,17 +82,7 @@ export class AnkiService {
 		if (config.fields.word) fields[config.fields.word] = note.word;
 		if (config.fields.wordDefinition) fields[config.fields.wordDefinition] = note.wordDefinition;
 
-		if (note.image && note.image.startsWith('data:image/') && config.fields.image) {
-			const filename = `jitori-${lastCardId}.png`;
-			const imageData = note.image.replace(/^data:image\/\w+;base64,/, '');
-			await this.request('storeMediaFile', {
-				filename,
-				data: imageData
-			});
-			fields[config.fields.image] = `<img src="${filename}">`;
-		} else if (config.fields.image) {
-			fields[config.fields.image] = note.image;
-		}
+
 
 		await this.request('updateNoteFields', {
 			note: {
@@ -120,25 +99,14 @@ export class AnkiService {
 		if (config.fields.word) fields[config.fields.word] = note.word;
 		if (config.fields.wordDefinition) fields[config.fields.wordDefinition] = note.wordDefinition;
 
-		const media: Array<{ data: string; filename: string; fields: string[] }> = [];
-		if (note.image && note.image.startsWith('data:image/') && config.fields.image) {
-			const imageData = note.image.replace(/^data:image\/\w+;base64,/, '');
-			media.push({
-				data: imageData,
-				filename: `jitori-${Date.now()}.png`,
-				fields: [config.fields.image]
-			});
-			fields[config.fields.image] = '';
-		} else if (config.fields.image) {
-			fields[config.fields.image] = note.image;
-		}
+
 
 		await this.request('guiAddCards', {
 			note: {
 				deckName: config.deckName,
 				modelName: config.noteType,
 				fields,
-				...(media.length > 0 && { picture: media })
+
 			}
 		});
 	}
