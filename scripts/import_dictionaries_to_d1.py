@@ -135,9 +135,15 @@ def stringify_gloss(gloss: Any) -> str:
 	if isinstance(gloss, str):
 		return gloss
 	if isinstance(gloss, list):
-		return " ".join(stringify_gloss(item) for item in gloss)
+		return " ".join(stringify_gloss(item) for item in gloss if item)
 	if isinstance(gloss, dict):
-		return str(gloss.get("text", gloss.get("content", str(gloss))))
+		text = gloss.get("text")
+		if text is not None:
+			return stringify_gloss(text)
+		content = gloss.get("content")
+		if content is not None:
+			return stringify_gloss(content)
+		return ""
 	return str(gloss)
 
 

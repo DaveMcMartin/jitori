@@ -38,35 +38,46 @@ function splitField(value: string): string[] {
 		.filter((item) => item.length > 0);
 }
 
-function mapDictionaryRow(row: DictionaryRow): DictionaryEntry {
-	let gloss = row.gloss;
+export function extractText(item: any): string {
+	if (typeof item === 'string') return item;
+	if (Array.isArray(item)) {
+		return item.map(extractText).join('');
+	}
+	if (item && typeof item === 'object') {
+		if (item.text !== undefined) return extractText(item.text);
+		if (item.content !== undefined) return extractText(item.content);
+	}
+	return '';
+}
+
+export function parseGloss(glossStr: string): string {
 	try {
-		let jsonStr = row.gloss;
+		let jsonStr = glossStr;
 		if (jsonStr.startsWith("[{'") || jsonStr.startsWith("{'")) {
 			jsonStr = jsonStr.replace(/'/g, '"');
+			// Quick fix for python's exported double quoted list-style strings
+			jsonStr = jsonStr.replace(/"➡️ "/g, "'➡️ '");
+			// If there are other properties where there are " inside a string value
+			// they would have been output as \" by python JSON dumps, or " directly.
+			// But for now replacing ' with " handles Python's str(dict) output
+			// which uses single quotes primarily.
 		}
 		const parsed = JSON.parse(jsonStr);
 		if (Array.isArray(parsed)) {
-			gloss = parsed
-				.map((item) => {
-					if (typeof item === 'string') return item;
-					if (item && typeof item === 'object') {
-						return item.content || item.text || JSON.stringify(item);
-					}
-					return String(item);
-				})
-				.join('; ');
-		} else if (typeof parsed === 'object' && parsed !== null) {
-			gloss = parsed.content || parsed.text || JSON.stringify(parsed);
+			return parsed.map(extractText).filter(Boolean).join('; ');
 		}
+		return extractText(parsed);
 	} catch {
+		return glossStr;
 	}
+}
 
+function mapDictionaryRow(row: DictionaryRow): DictionaryEntry {
 	return {
 		entSeq: row.ent_seq,
 		primaryKanji: row.primary_kanji,
 		primaryReading: row.primary_reading,
-		gloss: gloss,
+		gloss: parseGloss(row.gloss),
 		partsOfSpeech: splitField(row.parts_of_speech)
 	};
 }
