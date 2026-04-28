@@ -112,12 +112,14 @@
 <style>
 	.sidebar {
 		width: 300px;
-		height: 100%;
+		height: 100vh;
 		border-right: 1px solid #1f2937;
 		background: #0b1220;
 		display: flex;
 		flex-direction: column;
 		padding-bottom: 0.5rem;
+		position: sticky;
+		top: 0;
 	}
 
 	.sidebar-header {

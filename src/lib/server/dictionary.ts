@@ -41,20 +41,23 @@ function splitField(value: string): string[] {
 function mapDictionaryRow(row: DictionaryRow): DictionaryEntry {
 	let gloss = row.gloss;
 	try {
-		const parsed = JSON.parse(row.gloss);
+		let jsonStr = row.gloss;
+		if (jsonStr.startsWith("[{'") || jsonStr.startsWith("{'")) {
+			jsonStr = jsonStr.replace(/'/g, '"');
+		}
+		const parsed = JSON.parse(jsonStr);
 		if (Array.isArray(parsed)) {
 			gloss = parsed
 				.map((item) => {
 					if (typeof item === 'string') return item;
-					if (item.content) {
-						if (typeof item.content === 'string') return item.content;
-						if (Array.isArray(item.content)) return item.content.join('');
+					if (item && typeof item === 'object') {
+						return item.content || item.text || JSON.stringify(item);
 					}
-					return JSON.stringify(item);
+					return String(item);
 				})
 				.join('; ');
 		} else if (typeof parsed === 'object' && parsed !== null) {
-			gloss = parsed.content || JSON.stringify(parsed);
+			gloss = parsed.content || parsed.text || JSON.stringify(parsed);
 		}
 	} catch {
 	}

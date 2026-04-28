@@ -361,10 +361,10 @@
 	.main {
 		display: flex;
 		flex-direction: column;
-		height: 100%;
+		height: 100vh;
 		padding: 2rem;
 		gap: 1rem;
-		overflow: hidden;
+		overflow-y: auto;
 		background:
 			radial-gradient(circle at top right, rgba(37, 99, 235, 0.15), transparent 45%),
 			#020617;
@@ -375,6 +375,7 @@
 		align-items: center;
 		gap: 1.25rem;
 		margin-bottom: 0.5rem;
+		flex-shrink: 0;
 	}
 
 	.app-logo {
@@ -400,6 +401,7 @@
 		display: grid;
 		grid-template-columns: 1fr auto;
 		gap: 0.75rem;
+		flex-shrink: 0;
 	}
 
 	.input-shell {
@@ -481,12 +483,10 @@
 	}
 
 	.results {
-		flex: 1;
-		overflow-y: auto;
 		display: flex;
 		flex-direction: column;
 		gap: 0.75rem;
-		padding-right: 0.2rem;
+		padding-bottom: 2rem;
 	}
 
 	.empty {
