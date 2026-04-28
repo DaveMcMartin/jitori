@@ -51,7 +51,7 @@ export class AnkiService {
 				fields: [config.fields.image]
 			});
 			fields[config.fields.image] = '';
-		} else if (config.fields.image) {
+		} else if (config.fields.image && note.image) {
 			fields[config.fields.image] = note.image;
 		}
 
@@ -101,7 +101,7 @@ export class AnkiService {
 				data: imageData
 			});
 			fields[config.fields.image] = `<img src="${filename}">`;
-		} else if (config.fields.image) {
+		} else if (config.fields.image && note.image) {
 			fields[config.fields.image] = note.image;
 		}
 
@@ -129,7 +129,7 @@ export class AnkiService {
 				fields: [config.fields.image]
 			});
 			fields[config.fields.image] = '';
-		} else if (config.fields.image) {
+		} else if (config.fields.image && note.image) {
 			fields[config.fields.image] = note.image;
 		}
 
