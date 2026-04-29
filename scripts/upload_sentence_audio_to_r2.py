@@ -18,7 +18,7 @@ def parse_args() -> argparse.Namespace:
 	parser = argparse.ArgumentParser(description="Upload extracted sentence audio files to Cloudflare R2.")
 	parser.add_argument("--input", type=Path, default=Path("data/audio"))
 	parser.add_argument("--bucket", default=os.environ.get("R2_BUCKET_NAME", os.environ.get("R2_BUCKET", "")))
-	parser.add_argument("--account-id", default=os.environ.get("R2_ACCOUNT_ID", os.environ.get("CLOUDFLARE_ACCOUNT_ID", "")))
+	parser.add_argument("--account-id", default=os.environ.get("CLOUDFLARE_ACCOUNT_ID", ""))
 	parser.add_argument("--access-key-id", default=os.environ.get("R2_ACCESS_KEY_ID", ""))
 	parser.add_argument("--secret-access-key", default=os.environ.get("R2_SECRET_ACCESS_KEY", ""))
 	parser.add_argument("--log", type=Path, default=Path("logs/r2-upload-errors.log"))
@@ -29,7 +29,7 @@ def parse_args() -> argparse.Namespace:
 	parser.add_argument("--workers", type=int, default=max(1, min(8, os.cpu_count() or 4)))
 	parser.add_argument("--quiet-progress", action="store_true")
 	parser.add_argument("--failed-only", action="store_true")
-	parser.add_argument("--reset-state", action="store_true")
+	parser.add_argument("--reset-state", action="store_true", help="Clear local progress state before starting")
 	return parser.parse_args()
 
 
