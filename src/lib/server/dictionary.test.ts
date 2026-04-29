@@ -34,11 +34,16 @@ describe('parseGloss', () => {
 	});
 
 	it('should parse nested JSON structure', () => {
-		const jsonGloss = "[{'content': {'content': 'repetition mark in katakana', 'tag': 'li'}, 'data': {'content': 'glossary'}, 'lang': 'en', 'style': {'listStyleType': 'circle'}, 'tag': 'ul'}, {'content': {'content': ['see: ', {'content': '一の字点', 'href': '?query=一の字点&wildcards=off', 'lang': 'ja', 'tag': 'a'}, {'content': ' kana iteration mark', 'data': {'content': 'refGlosses'}, 'style': {'fontSize': '65%', 'verticalAlign': 'middle'}, 'tag': 'span'}], 'tag': 'li'}, 'data': {'content': 'references'}, 'lang': 'en', 'style': {'listStyleType': \"'➡️ '\"}, 'tag': 'ul'}]";
+		const jsonGloss = '[{"content": {"content": "repetition mark in katakana", "tag": "li"}, "data": {"content": "glossary"}, "lang": "en", "style": {"listStyleType": "circle"}, "tag": "ul"}, {"content": {"content": ["see: ", {"content": "一の字点", "href": "?query=一の字点&wildcards=off", "lang": "ja", "tag": "a"}, {"content": " kana iteration mark", "data": {"content": "refGlosses"}, "style": {"fontSize": "65%", "verticalAlign": "middle"}, "tag": "span"}], "tag": "li"}, "data": {"content": "references"}, "lang": "en", "style": {"listStyleType": "➡️ "}, "tag": "ul"}]';
 		expect(parseGloss(jsonGloss)).toBe("repetition mark in katakana; see: 一の字点 kana iteration mark");
 	});
 
 	it('should parse valid JSON object', () => {
 		expect(parseGloss('{"content": "something"}')).toBe("something");
+	});
+
+	it('should parse multiple JSON segments separated by semicolon', () => {
+		const input = '{"content": "eat"}; {"content": [{"content": "live", "tag": "li"}, {"content": "subsist", "tag": "li"}]}';
+		expect(parseGloss(input)).toBe("eat; live; subsist");
 	});
 });

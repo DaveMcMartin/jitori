@@ -41,7 +41,10 @@ function splitField(value: string): string[] {
 export function extractText(item: any): string {
 	if (typeof item === 'string') return item;
 	if (Array.isArray(item)) {
-		return item.map(extractText).join('');
+		// If the array consists of list items, join them with a semicolon
+		const isList = item.length > 1 && item.every((i) => i && typeof i === 'object' && i.tag === 'li');
+		const parts = item.map(extractText).filter(Boolean);
+		return parts.join(isList ? '; ' : '');
 	}
 	if (item && typeof item === 'object') {
 		if (item.text !== undefined) return extractText(item.text);
@@ -51,34 +54,38 @@ export function extractText(item: any): string {
 }
 
 export function parseGloss(glossStr: string): string {
-	try {
-		let jsonStr = glossStr;
-		if (jsonStr.startsWith("[{'") || jsonStr.startsWith("{'")) {
-			// Replace single quotes with double quotes, but NOT if they are inside double quotes (already escaped)
-			// or if they are the markers like '➡️ ' which we want to keep as ' inside the resulting JSON string
-			// Actually, if we convert ALL ' to ", then we need to handle cases where ' was inside a string.
-			// The most common case here is Python's repr() of a list/dict.
-			jsonStr = jsonStr.replace(/(\W)'|'(\W)/g, '$1"$2');
-			// Fix cases where it replaced ' inside words like "it's" - though unlikely in this specific data
-		}
-		const parsed = JSON.parse(jsonStr);
-		if (Array.isArray(parsed)) {
-			return parsed.map(extractText).filter(Boolean).join('; ');
-		}
-		return extractText(parsed);
-	} catch {
-		// Fallback for tricky cases: try a simpler replace if the above failed
+	if (!glossStr || (!glossStr.includes('{') && !glossStr.includes('['))) {
+		return glossStr;
+	}
+
+	// The database might contain multiple JSON structures separated by "; "
+	const segments = glossStr.split('; ');
+	const parsedSegments = segments.map((segment) => {
 		try {
-			const jsonStr = glossStr.replace(/'/g, '"').replace(/"➡️ "/g, "'➡️ '").replace(/"ℹ️ "/g, "'ℹ️ '");
+			let jsonStr = segment;
+			if (jsonStr.startsWith("[{'") || jsonStr.startsWith("{'")) {
+				jsonStr = jsonStr.replace(/(\W)'|'(\W)|^'|'$/g, '$1"$2');
+			}
 			const parsed = JSON.parse(jsonStr);
 			if (Array.isArray(parsed)) {
 				return parsed.map(extractText).filter(Boolean).join('; ');
 			}
 			return extractText(parsed);
 		} catch {
-			return glossStr;
+			try {
+				const jsonStr = segment.replace(/'/g, '"');
+				const parsed = JSON.parse(jsonStr);
+				if (Array.isArray(parsed)) {
+					return parsed.map(extractText).filter(Boolean).join('; ');
+				}
+				return extractText(parsed);
+			} catch {
+				return segment;
+			}
 		}
-	}
+	});
+
+	return parsedSegments.filter(Boolean).join('; ');
 }
 
 function mapDictionaryRow(row: DictionaryRow): DictionaryEntry {

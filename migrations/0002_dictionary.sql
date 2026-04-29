@@ -20,6 +20,7 @@ CREATE INDEX IF NOT EXISTS idx_jmdict_entry_primary_kanji ON jmdict_entry(primar
 CREATE INDEX IF NOT EXISTS idx_jmdict_entry_primary_reading ON jmdict_entry(primary_reading);
 CREATE INDEX IF NOT EXISTS idx_jmdict_term_term ON jmdict_term(term);
 CREATE INDEX IF NOT EXISTS idx_jmdict_term_ent_seq ON jmdict_term(ent_seq);
+CREATE INDEX IF NOT EXISTS idx_jmdict_term_lookup ON jmdict_term(term, term_kind);
 
 CREATE TABLE IF NOT EXISTS kanjidict_entry (
 	literal TEXT PRIMARY KEY,
