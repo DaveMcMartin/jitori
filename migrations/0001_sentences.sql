@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS sentence (
 	id TEXT PRIMARY KEY,
 	source TEXT NOT NULL,
-	audio_path TEXT NOT NULL UNIQUE,
+	audio_path TEXT NOT NULL,
 	audio_url TEXT NOT NULL,
 	sentence TEXT NOT NULL,
 	translation TEXT NOT NULL,
