@@ -31,6 +31,7 @@ class AnkiMediaEntry:
 	filename: str
 	member_name: str
 	checksum: str
+	size: int | None = None
 
 
 def default_sentence_input_path() -> Path:
@@ -151,7 +152,7 @@ def read_varint(payload: bytes, offset: int) -> tuple[int, int]:
 def parse_anki_media_entry(payload: bytes) -> AnkiMediaEntry:
 	offset = 0
 	filename = ""
-	member_index: int | None = None
+	file_size: int | None = None
 	checksum = ""
 	while offset < len(payload):
 		tag, offset = read_varint(payload, offset)
@@ -160,7 +161,7 @@ def parse_anki_media_entry(payload: bytes) -> AnkiMediaEntry:
 		if wire_type == 0:
 			value, offset = read_varint(payload, offset)
 			if field_number == 2:
-				member_index = value
+				file_size = value
 			continue
 		if wire_type != 2:
 			raise ValueError(f"Unsupported media manifest wire type: {wire_type}")
@@ -171,9 +172,9 @@ def parse_anki_media_entry(payload: bytes) -> AnkiMediaEntry:
 			filename = chunk.decode("utf-8")
 		elif field_number == 3:
 			checksum = chunk.hex()
-	if not filename or member_index is None:
+	if not filename:
 		raise ValueError("Media manifest entry is missing required fields")
-	return AnkiMediaEntry(filename=filename, member_name=str(member_index), checksum=checksum)
+	return AnkiMediaEntry(filename=filename, member_name="", checksum=checksum, size=file_size)
 
 
 def parse_anki_media_manifest(payload: bytes) -> dict[str, AnkiMediaEntry]:
@@ -249,6 +250,8 @@ class AnkiDeckArchive:
 		self.connection: sqlite3.Connection | None = None
 		self.field_names_by_model: dict[int, list[str]] = {}
 		self.media_entries_by_filename: dict[str, AnkiMediaEntry] = {}
+		self.media_member_name_by_checksum: dict[str, str] | None = None
+		self.archive_member_names: set[str] = set()
 
 	def __enter__(self) -> AnkiDeckArchive:
 		self.archive = zipfile.ZipFile(self.deck_path, "r")
@@ -257,6 +260,7 @@ class AnkiDeckArchive:
 		self.connection = sqlite3.connect(str(self.db_path), check_same_thread=False)
 		self.field_names_by_model = self._load_field_names()
 		self.media_entries_by_filename = self._load_media_entries()
+		self.archive_member_names = set(self.archive.namelist())
 		return self
 
 	def __exit__(self, exc_type, exc, tb) -> None:
@@ -269,6 +273,8 @@ class AnkiDeckArchive:
 		if self.archive is not None:
 			self.archive.close()
 			self.archive = None
+		self.media_member_name_by_checksum = None
+		self.archive_member_names = set()
 
 	def iter_normalized_sentences(self, public_audio_base_url: str) -> Iterator[dict]:
 		if self.connection is None:
@@ -309,8 +315,9 @@ class AnkiDeckArchive:
 		if destination_path.exists() and destination_path.stat().st_size > 0:
 			return
 		destination_path.parent.mkdir(parents=True, exist_ok=True)
-		compressed_payload = self.archive.read(entry.member_name)
-		destination_path.write_bytes(decompress_zstd_bytes(compressed_payload))
+		member_name = self._resolve_media_member_name(entry)
+		payload = self.archive.read(member_name)
+		destination_path.write_bytes(self._decode_media_payload(payload))
 
 	def _prepare_database(self, temp_root: Path) -> Path:
 		if self.archive is None:
@@ -349,3 +356,35 @@ class AnkiDeckArchive:
 			return parse_anki_media_manifest(payload)
 		except Exception:
 			return parse_anki_media_manifest(decompress_zstd_bytes(payload))
+
+	def _resolve_media_member_name(self, entry: AnkiMediaEntry) -> str:
+		if self.archive is None:
+			raise RuntimeError("Anki deck archive is not open")
+		if entry.member_name and entry.member_name in self.archive_member_names:
+			return entry.member_name
+		if not entry.checksum:
+			raise FileNotFoundError(f"Media entry cannot be resolved from the deck archive: {entry.filename}")
+		if self.media_member_name_by_checksum is None:
+			self.media_member_name_by_checksum = self._build_media_member_name_by_checksum()
+		member_name = self.media_member_name_by_checksum.get(entry.checksum)
+		if not member_name:
+			raise FileNotFoundError(f"Media checksum is not present in the deck archive: {entry.filename}")
+		return member_name
+
+	def _build_media_member_name_by_checksum(self) -> dict[str, str]:
+		if self.archive is None:
+			raise RuntimeError("Anki deck archive is not open")
+		mapping: dict[str, str] = {}
+		for member_name in self.archive.namelist():
+			if not member_name.isdigit():
+				continue
+			payload = self.archive.read(member_name)
+			decoded_payload = self._decode_media_payload(payload)
+			mapping[hashlib.sha1(decoded_payload).hexdigest()] = member_name
+		return mapping
+
+	def _decode_media_payload(self, payload: bytes) -> bytes:
+		try:
+			return decompress_zstd_bytes(payload)
+		except Exception:
+			return payload
