@@ -217,7 +217,7 @@ def parse_jmdict_xml(archive: zipfile.ZipFile, member_name: str) -> list[JMDictI
 					ent_seq=ent_seq,
 					primary_kanji=primary_kanji,
 					primary_reading=primary_reading,
-					gloss="; ".join(unique(glosses)),
+					gloss=json.dumps(unique(glosses)),
 					parts_of_speech=unique(parts_of_speech),
 					terms_kanji=terms_kanji,
 					terms_reading=terms_reading
@@ -280,7 +280,7 @@ def parse_jmdict_yomitan(zip_path: Path) -> list[JMDictImportItem]:
 			ent_seq=seq,
 			primary_kanji=primary_kanji,
 			primary_reading=primary_reading,
-			gloss="; ".join(unique(stringify_gloss(g) for g in d["glosses"])),
+			gloss=json.dumps(d["glosses"]),
 			parts_of_speech=unique(d["pos"]),
 			terms_kanji=terms_kanji,
 			terms_reading=terms_reading
