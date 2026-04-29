@@ -13,7 +13,8 @@
 		"setup": "npx wrangler d1 migrations apply jitori --local && python3 scripts/seed_dev_db.py",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-		"test": "vitest run"
+		"test": "vitest run",
+		"clean": "rm -rf .svelte-kit .wrangler build logs data/audio static/audio/*.mp3 static/audio/*.ogg"
 	},
 	"devDependencies": {
 		"@cloudflare/kv-asset-handler": "^0.4.2",
