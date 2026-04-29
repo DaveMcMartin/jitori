@@ -67,8 +67,8 @@ def main():
     ]
 
     jm_entries = [
-        {"ent_seq": 1358280, "kanji": "食べる", "reading": "たべる", "gloss": "to eat; to live on (e.g. a salary); to live off; to subsist on", "pos": "verb (ichidan)"},
-        {"ent_seq": 1000000, "kanji": "ヽ", "reading": "ヽ", "gloss": "[{'content': {'content': 'repetition mark in katakana', 'tag': 'li'}, 'data': {'content': 'glossary'}, 'lang': 'en', 'style': {'listStyleType': 'circle'}, 'tag': 'ul'}, {'content': {'content': ['see: ', {'content': '一の字点', 'href': '?query=一の字点&wildcards=off', 'lang': 'ja', 'tag': 'a'}, {'content': ' kana iteration mark', 'data': {'content': 'refGlosses'}, 'style': {'fontSize': '65%', 'verticalAlign': 'middle'}, 'tag': 'span'}], 'tag': 'li'}, 'data': {'content': 'references'}, 'lang': 'en', 'style': {'listStyleType': "'➡️ '"}, 'tag': 'ul'}]", "pos": "unclassified"}
+        {"ent_seq": 1358280, "kanji": "食べる", "reading": "たべる", "gloss": "[{'content': 'to eat', 'tag': 'span'}, {'content': 'to live on (e.g. a salary)', 'tag': 'span'}, {'content': 'to live off', 'tag': 'span'}, {'content': 'to subsist on', 'tag': 'span'}]", "pos": "verb (ichidan)"},
+        {"ent_seq": 1000000, "kanji": "ヽ", "reading": "ヽ", "gloss": "[{'content': {'content': 'repetition mark in katakana', 'tag': 'li'}, 'data': {'content': 'glossary'}, 'lang': 'en', 'style': {'listStyleType': 'circle'}, 'tag': 'ul'}, {'content': {'content': ['see: ', {'content': '一の字点', 'href': '?query=一の字点&wildcards=off', 'lang': 'ja', 'tag': 'a'}, {'content': ' kana iteration mark', 'data': {'content': 'refGlosses'}, 'style': {'fontSize': '65%', 'verticalAlign': 'middle'}, 'tag': 'span'}], 'tag': 'li'}, 'data': {'content': 'references'}, 'lang': 'en', 'style': {'listStyleType': \"'➡️ '\"}, 'tag': 'ul'}]", "pos": "unclassified"}
     ]
 
     kanji_entries = [
