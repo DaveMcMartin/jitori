@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
-	import { Search, Play, Pause, Download, ExternalLink, Loader2, BookText, X, SearchX } from 'lucide-svelte';
+	import { Search, Play, Pause, Download, ExternalLink, Loader2, BookText, X, SearchX, Info } from 'lucide-svelte';
 	import DictionarySidebar from '$lib/components/DictionarySidebar.svelte';
 	import Sidebar from '$lib/components/Sidebar.svelte';
+	import GithubIcon from '$lib/components/GithubIcon.svelte';
 	import { sentenceSearchService, type SentenceSearchExpansion } from '$lib/services/sentence-search';
 	import { dictionaryService } from '$lib/services/dictionary';
 	import { ankiService } from '$lib/services/anki';
@@ -193,9 +194,17 @@
 	<main class="main">
 		<header class="hero">
 			<img src="/app-icon.svg" alt="Jitori Logo" class="app-logo" />
-			<div>
+			<div class="hero-content">
 				<h1>Jitori Sentence Bank</h1>
 				<p>Find real Japanese example sentences fast, with audio and one-click Anki export.</p>
+			</div>
+			<div class="header-actions">
+				<a href="https://github.com/DaveMcMartin/jitori" target="_blank" rel="noreferrer" class="icon-link" title="GitHub">
+					<GithubIcon size={20} />
+				</a>
+				<a href="/about" class="icon-link" title="About">
+					<Info size={20} />
+				</a>
 			</div>
 		</header>
 
@@ -376,6 +385,34 @@
 		gap: 1.25rem;
 		margin-bottom: 0.5rem;
 		flex-shrink: 0;
+	}
+
+	.hero-content {
+		flex: 1;
+	}
+
+	.header-actions {
+		display: flex;
+		gap: 0.75rem;
+	}
+
+	.icon-link {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 40px;
+		height: 40px;
+		border-radius: 10px;
+		background: #0f172a;
+		border: 1px solid #1e293b;
+		color: #94a3b8;
+		transition: all 0.2s;
+	}
+
+	.icon-link:hover {
+		color: #3b82f6;
+		border-color: #3b82f6;
+		background: rgba(59, 130, 246, 0.1);
 	}
 
 	.app-logo {

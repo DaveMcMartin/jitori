@@ -54,13 +54,12 @@ export function parseGloss(glossStr: string): string {
 	try {
 		let jsonStr = glossStr;
 		if (jsonStr.startsWith("[{'") || jsonStr.startsWith("{'")) {
-			jsonStr = jsonStr.replace(/'/g, '"');
-			// Quick fix for python's exported double quoted list-style strings
-			jsonStr = jsonStr.replace(/"➡️ "/g, "'➡️ '");
-			// If there are other properties where there are " inside a string value
-			// they would have been output as \" by python JSON dumps, or " directly.
-			// But for now replacing ' with " handles Python's str(dict) output
-			// which uses single quotes primarily.
+			// Replace single quotes with double quotes, but NOT if they are inside double quotes (already escaped)
+			// or if they are the markers like '➡️ ' which we want to keep as ' inside the resulting JSON string
+			// Actually, if we convert ALL ' to ", then we need to handle cases where ' was inside a string.
+			// The most common case here is Python's repr() of a list/dict.
+			jsonStr = jsonStr.replace(/(\W)'|'(\W)/g, '$1"$2');
+			// Fix cases where it replaced ' inside words like "it's" - though unlikely in this specific data
 		}
 		const parsed = JSON.parse(jsonStr);
 		if (Array.isArray(parsed)) {
@@ -68,7 +67,17 @@ export function parseGloss(glossStr: string): string {
 		}
 		return extractText(parsed);
 	} catch {
-		return glossStr;
+		// Fallback for tricky cases: try a simpler replace if the above failed
+		try {
+			const jsonStr = glossStr.replace(/'/g, '"').replace(/"➡️ "/g, "'➡️ '").replace(/"ℹ️ "/g, "'ℹ️ '");
+			const parsed = JSON.parse(jsonStr);
+			if (Array.isArray(parsed)) {
+				return parsed.map(extractText).filter(Boolean).join('; ');
+			}
+			return extractText(parsed);
+		} catch {
+			return glossStr;
+		}
 	}
 }
 

@@ -36,6 +36,10 @@ Jitori includes a seeding script that prepares a fully functional local environm
 - `static/audio/`: Local audio storage (git ignored).
 - `data/`: Temporary storage for data processing.
 
+## Data Sources
+- **Sentences**: The sentences and audio files are sourced from the [Ankidrone Sentence Pack](https://tatsumoto.neocities.org/blog/ankidrone-sentence-pack) by Tatsumoto.
+- **Dictionary**: Japanese-English definitions are from JMdict, and Kanji information is from KANJIDIC2.
+
 ## Working with D1 Locally
 Wrangler stores your local database state in the `.wrangler/` directory. If you ever need to reset your local database entirely:
 ```bash

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { Settings, Database, Check, AlertCircle, RefreshCw, Save } from 'lucide-svelte';
+	import { Settings, Database, Check, AlertCircle, RefreshCw, Save, Info } from 'lucide-svelte';
+	import GithubIcon from '$lib/components/GithubIcon.svelte';
 	import { configStore, defaultConfig } from '$lib/stores/config';
 	import { ankiService } from '$lib/services/anki';
 	import { saveToStorage, loadFromStorage } from '$lib/services/crypto';
@@ -122,6 +123,17 @@
 		</button>
 	</div>
 
+	{#if !isAnkiConnected && isHydrated}
+		<div class="anki-info">
+			<Info size={14} />
+			<p>
+				If you're having trouble connecting, ensure <strong><a href="https://ankiweb.net/shared/info/2055492159" target="_blank" rel="noreferrer">Anki Connect</a></strong> is running and 
+				<code>https://jitori.davidmartins.net</code> is in the <code>webBindAddress</code> or 
+				<code>webCorsOriginList</code> in Anki settings.
+			</p>
+		</div>
+	{/if}
+
 	<div class="content">
 		<div class="field">
 			<label for="anki-url">AnkiConnect URL</label>
@@ -205,6 +217,10 @@
 			<Save size={14} />
 			{isSaving ? 'Saving...' : 'Save'}
 		</button>
+		<a href="https://github.com/DaveMcMartin/jitori" target="_blank" rel="noreferrer" class="github-link">
+			<GithubIcon size={14} />
+			GitHub
+		</a>
 	</div>
 </aside>
 
@@ -248,6 +264,36 @@
 
 	.status strong {
 		color: #f8fafc;
+	}
+
+	.anki-info {
+		margin: 1rem 1.25rem 0.5rem;
+		padding: 0.75rem;
+		background: rgba(30, 41, 59, 0.5);
+		border: 1px solid #1e293b;
+		border-radius: 0.5rem;
+		display: flex;
+		gap: 0.6rem;
+		color: #94a3b8;
+		font-size: 0.75rem;
+		line-height: 1.4;
+	}
+
+	.anki-info a {
+		color: #3b82f6;
+		text-decoration: underline;
+		font-weight: 700;
+	}
+
+	.anki-info p strong {
+		color: #cbd5e1;
+	}
+
+	.anki-info code {
+		background: #020617;
+		padding: 0.1rem 0.25rem;
+		border-radius: 0.2rem;
+		color: #bfdbfe;
 	}
 
 	:global(.success) {
@@ -321,6 +367,9 @@
 	.footer {
 		padding: 1rem 1.25rem;
 		border-top: 1px solid #1f2937;
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
 	}
 
 	.save-btn {
@@ -336,6 +385,21 @@
 		border-radius: 0.45rem;
 		cursor: pointer;
 		font-weight: 600;
+	}
+
+	.github-link {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.4rem;
+		color: #94a3b8;
+		text-decoration: none;
+		font-size: 0.75rem;
+		transition: color 0.2s;
+	}
+
+	.github-link:hover {
+		color: #f8fafc;
 	}
 
 	@keyframes spin {
