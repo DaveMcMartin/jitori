@@ -53,6 +53,7 @@ def iter_normalized_sentences(input_path: Path, public_audio_base_url: str) -> I
 
 def build_normalized_sentence_record(
 	*,
+	note_id: str = "",
 	source: str,
 	audio_path: str,
 	sentence: str,
@@ -64,6 +65,7 @@ def build_normalized_sentence_record(
 	normalized_audio_path = audio_path.lstrip("/")
 	return {
 		"id": build_sentence_id(
+			note_id=note_id,
 			audio_path=normalized_audio_path,
 			sentence=sentence,
 			translation=translation,
@@ -79,8 +81,14 @@ def build_normalized_sentence_record(
 	}
 
 
-def build_sentence_id(audio_path: str, sentence: str = "", translation: str = "", source: str = "") -> str:
-	identity = audio_path or "\n".join((source.strip(), sentence.strip(), translation.strip()))
+def build_sentence_id(
+	audio_path: str,
+	sentence: str = "",
+	translation: str = "",
+	source: str = "",
+	note_id: str = ""
+) -> str:
+	identity = note_id.strip() or audio_path or "\n".join((source.strip(), sentence.strip(), translation.strip()))
 	return hashlib.sha1(identity.encode("utf-8")).hexdigest()
 
 
@@ -265,8 +273,8 @@ class AnkiDeckArchive:
 	def iter_normalized_sentences(self, public_audio_base_url: str) -> Iterator[dict]:
 		if self.connection is None:
 			raise RuntimeError("Anki deck archive is not open")
-		rows = self.connection.execute("SELECT mid, tags, flds FROM notes ORDER BY id ASC")
-		for model_id, tags, field_blob in rows:
+		rows = self.connection.execute("SELECT id, mid, tags, flds FROM notes ORDER BY id ASC")
+		for note_id, model_id, tags, field_blob in rows:
 			field_names = self.field_names_by_model.get(int(model_id), [])
 			if not field_names:
 				continue
@@ -282,6 +290,7 @@ class AnkiDeckArchive:
 			if not sentence or not translation:
 				continue
 			yield build_normalized_sentence_record(
+				note_id=str(note_id),
 				source=choose_sentence_source(tags, audio_filenames),
 				audio_path=audio_path,
 				sentence=sentence,
