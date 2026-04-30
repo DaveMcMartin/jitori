@@ -44,6 +44,14 @@ export class AnkiService {
 
 
 
+				const audioObj = (config.fields.audio && note.audioUrl && note.audioFilename)
+			? [{
+				url: note.audioUrl,
+				filename: note.audioFilename,
+				fields: [config.fields.audio]
+			}]
+			: undefined;
+
 		const result = await this.request('addNote', {
 			note: {
 				deckName: config.deckName,
@@ -53,7 +61,7 @@ export class AnkiService {
 					allowDuplicate: false,
 					duplicateScope: 'deck'
 				},
-
+				...(audioObj ? { audio: audioObj } : {})
 			}
 		});
 
@@ -84,7 +92,7 @@ export class AnkiService {
 
 
 
-		await this.request('updateNoteFields', {
+				await this.request('updateNoteFields', {
 			note: {
 				id: lastCardId,
 				fields
@@ -101,12 +109,20 @@ export class AnkiService {
 
 
 
+						const audioObj = (config.fields.audio && note.audioUrl && note.audioFilename)
+			? [{
+				url: note.audioUrl,
+				filename: note.audioFilename,
+				fields: [config.fields.audio]
+			}]
+			: undefined;
+
 		await this.request('guiAddCards', {
 			note: {
 				deckName: config.deckName,
 				modelName: config.noteType,
 				fields,
-
+				...(audioObj ? { audio: audioObj } : {})
 			}
 		});
 	}

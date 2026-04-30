@@ -121,7 +121,9 @@
 			sentence: sentence.sentence,
 			translation: sentence.translation,
 			word: detectedWord,
-			wordDefinition: expansion ? `Part of speech: ${expansion.partOfSpeech}` : ''
+			wordDefinition: expansion ? `Part of speech: ${expansion.partOfSpeech}` : '',
+			audioUrl: new URL(resolveAudioUrl(sentence), window.location.origin).href,
+			audioFilename: `jitori_audio_${sentence.id}.mp3`
 		};
 	}
 

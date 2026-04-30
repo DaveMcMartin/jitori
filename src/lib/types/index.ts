@@ -14,6 +14,7 @@ export interface AnkiConfig {
 		translation: string;
 		word: string;
 		wordDefinition: string;
+		audio: string;
 	};
 }
 
@@ -22,6 +23,8 @@ export interface AnkiNoteInput {
 	translation: string;
 	word: string;
 	wordDefinition: string;
+	audioUrl?: string;
+	audioFilename?: string;
 }
 
 export interface StoredSentence {
