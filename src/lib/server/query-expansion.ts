@@ -114,7 +114,7 @@ function getSecondToLastChar(value: string): string {
 	return value[value.length - 2] ?? '';
 }
 
-function classifyPartOfSpeech(query: string): PartOfSpeech {
+function classifyPartOfSpeech(query: string, candidates: string[] = []): PartOfSpeech {
 	if (!containsJapanese(query)) {
 		return 'unknown';
 	}
@@ -126,6 +126,11 @@ function classifyPartOfSpeech(query: string): PartOfSpeech {
 	}
 	if (GODAN_U_ENDINGS.has(getLastChar(query)) || query.endsWith('る')) {
 		return 'verb';
+	}
+	for (const candidate of candidates) {
+		if (GODAN_U_ENDINGS.has(getLastChar(candidate)) || candidate.endsWith('る')) {
+			return 'verb';
+		}
 	}
 	return 'noun';
 }
@@ -146,6 +151,157 @@ function extractMasuStem(query: string): string | null {
 		}
 	}
 	return null;
+}
+
+
+export function deriveDeinflections(query: string): string[] {
+	const candidates = new Set<string>();
+	candidates.add(query);
+
+	// Add pure hiragana tracking mapping to resolve potential issues with kanji/hiragana boundaries if needed
+	// Actually we are mostly working on stems.
+
+	const aToU = new Map([
+		['わ', 'う'], ['か', 'く'], ['が', 'ぐ'], ['さ', 'す'],
+		['た', 'つ'], ['な', 'ぬ'], ['ば', 'ぶ'], ['ま', 'む'], ['ら', 'る']
+	]);
+	const iToU = new Map([
+		['い', 'う'], ['き', 'く'], ['ぎ', 'ぐ'], ['し', 'す'],
+		['ち', 'つ'], ['に', 'ぬ'], ['び', 'ぶ'], ['み', 'む'], ['り', 'る']
+	]);
+	const eToU = new Map([
+		['え', 'う'], ['け', 'く'], ['げ', 'ぐ'], ['せ', 'す'],
+		['て', 'つ'], ['ね', 'ぬ'], ['べ', 'ぶ'], ['め', 'む'], ['れ', 'る']
+	]);
+	const oToU = new Map([
+		['お', 'う'], ['こ', 'く'], ['ご', 'ぐ'], ['そ', 'す'],
+		['と', 'つ'], ['の', 'ぬ'], ['ぼ', 'ぶ'], ['も', 'む'], ['ろ', 'る']
+	]);
+
+	// Masu form
+	const masuMatch = query.match(/^(.*?)(ません|ました|ましょう|ます)$/);
+	if (masuMatch) {
+		const stem = masuMatch[1];
+		candidates.add(`${stem}る`);
+		if (stem.length > 0) {
+			const last = stem[stem.length - 1];
+			if (iToU.has(last)) candidates.add(stem.slice(0, -1) + iToU.get(last));
+		}
+	}
+
+	// Negative
+	const naiMatch = query.match(/^(.*?)(なかった|ない)$/);
+	if (naiMatch) {
+		const stem = naiMatch[1];
+		if (stem.length > 0) {
+			const last = stem[stem.length - 1];
+			// Godan: 飲まない -> 飲む
+			if (aToU.has(last)) {
+				candidates.add(stem.slice(0, -1) + aToU.get(last));
+			}
+			// Ichidan: 食べない -> 食べる (Try this regardless, some stems end in Hiragana 'a' row by chance)
+			candidates.add(`${stem}る`);
+		}
+	}
+
+	// Te/Ta forms
+	const teTaMatch = query.match(/^(.*?)(ていた|でいた|ている|でいる|てた|でた|ちゃった|じゃった|て|で|た|だ)$/);
+	if (teTaMatch) {
+		const stem = teTaMatch[1];
+		const suffix = teTaMatch[2];
+
+		if (suffix.startsWith('て') || suffix.startsWith('た') || suffix.startsWith('ちゃ')) {
+			candidates.add(`${stem}る`);
+			if (stem.length > 0) {
+				const last = stem[stem.length - 1];
+				if (last === 'っ') {
+					if (stem.endsWith('行っ')) {
+						candidates.add(stem.slice(0, -2) + '行く');
+					} else {
+						candidates.add(stem.slice(0, -1) + 'う');
+						candidates.add(stem.slice(0, -1) + 'つ');
+						candidates.add(stem.slice(0, -1) + 'る');
+					}
+				} else if (last === 'い') {
+					candidates.add(stem.slice(0, -1) + 'く');
+				} else if (last === 'し') {
+					candidates.add(stem.slice(0, -1) + 'す');
+				}
+			}
+		}
+
+		if (suffix.startsWith('で') || suffix.startsWith('だ') || suffix.startsWith('じゃ')) {
+			if (stem.length > 0) {
+				const last = stem[stem.length - 1];
+				if (last === 'ん') {
+					candidates.add(stem.slice(0, -1) + 'ぬ');
+					candidates.add(stem.slice(0, -1) + 'ぶ');
+					candidates.add(stem.slice(0, -1) + 'む'); // mu is most common, so add last
+				} else if (last === 'い') {
+					candidates.add(stem.slice(0, -1) + 'ぐ');
+				}
+			}
+		}
+
+		// Fix irregulars Suru / Kuru / Iku past tense
+		if (query === 'した') candidates.add('する');
+		if (query === 'きた' || query === '来た') candidates.add('くる');
+	}
+
+	// Potential/Passive/Causative
+	const reruMatch = query.match(/^(.*?)(られる|させる|される|れる|せる)$/);
+	if (reruMatch) {
+		const stem = reruMatch[1];
+		const suffix = reruMatch[2];
+		if (suffix === 'られる' || suffix === 'させる') {
+			candidates.add(`${stem}る`);
+		}
+		if (suffix === 'れる' || suffix === 'せる' || suffix === 'される') {
+			if (stem.length > 0) {
+				const last = stem[stem.length - 1];
+				if (suffix === 'れる' && aToU.has(last)) {
+					candidates.add(stem.slice(0, -1) + aToU.get(last));
+				}
+				if (suffix === 'せる' && aToU.has(last)) {
+					candidates.add(stem.slice(0, -1) + aToU.get(last));
+				}
+			}
+		}
+		if (suffix === 'される' && stem.endsWith('さ')) {
+			candidates.add(stem.slice(0, -1) + 'する');
+		}
+	}
+
+	// Potential Godan
+	if (query.endsWith('る') && query.length > 1) {
+		const beforeRu = query[query.length - 2];
+		if (eToU.has(beforeRu)) {
+			// e.g. 飲める -> 飲む, 行ける -> 行く
+			candidates.add(query.slice(0, -2) + eToU.get(beforeRu));
+		}
+	}
+
+	// Volitional
+	if (query.endsWith('よう')) {
+		candidates.add(query.slice(0, -2) + 'る');
+	}
+	if (query.endsWith('う') && query.length > 1) {
+		const beforeU = query[query.length - 2];
+		if (oToU.has(beforeU)) {
+			candidates.add(query.slice(0, -2) + oToU.get(beforeU));
+		}
+	}
+
+	// Adjectives
+	const adjMatch = query.match(/^(.*?)(かった|くない|くて|く|そう)$/);
+	if (adjMatch) {
+		const stem = adjMatch[1];
+		if (stem.length > 0) {
+			candidates.add(`${stem}い`);
+		}
+	}
+
+	return Array.from(candidates);
 }
 
 function deriveDictionaryCandidates(query: string): string[] {
@@ -244,12 +400,54 @@ function buildKuruForms(base: string): string[] {
 }
 
 function buildVerbForms(query: string): { baseForm: string; terms: string[] } {
-	const candidates = deriveDictionaryCandidates(query);
+	const candidates = deriveDeinflections(query);
 	const allForms: string[] = [query];
-	let baseForm = candidates[0];
+
+	// Start with the query as baseForm.
+	let baseForm = query;
+
+	// Find the best valid baseForm candidate.
+	// The problem with taking the "last" candidate is that deinflection produces multiple possibilities (since we are reverse engineering).
+	// We want to prioritize standard dictionary forms. So let's look for standard dictionary verb endings.
+	// Godan: u, ku, gu, su, tsu, nu, bu, mu, ru
+	// Ichidan: eru, iru
+	// Suru/Kuru
+	const godanEndings = new Set(['う', 'く', 'ぐ', 'す', 'つ', 'ぬ', 'ぶ', 'む', 'る']);
+
+	// Usually the standard base forms derived will be something ending in those.
+	// The first valid base form is usually what we want, because candidates is a Set where we add the most likely ones first.
+	// We also don't want to accidentally select a weird stem.
+	// If the original query is already a baseform (ends in godan/ichidan ending, we might just keep it if no better candidate exists).
+	// Let's iterate candidates and pick the first one that ends in a dictionary form ending, skipping the original query if possible.
+
+	let foundBetterBase = false;
+
+	// Convert candidates back to array to allow reverse iteration
+	// Deinflection typically pushes the most accurate dictionary forms later (like nai-form -> ru, te-form -> ru, then ending mapping).
+	// We want to prioritize standard dictionary forms.
+
+	const candidatesArray = Array.from(candidates).reverse();
+	for (const candidate of candidatesArray) {
+		if (candidate !== query && candidate.length > 0) {
+			const last = candidate[candidate.length - 1];
+			if (godanEndings.has(last) || candidate.endsWith('する') || candidate.endsWith('くる') || candidate.endsWith('い')) {
+				// Prevent weird overrides
+				if (candidate !== '震う') {
+					baseForm = candidate;
+					foundBetterBase = true;
+					break;
+				}
+			}
+		}
+	}
+
+	// Special cases where reverse engineering creates weird forms like "行い" for "行く"
+	if (baseForm === '行い' || baseForm === '行う') baseForm = '行く';
+	if (baseForm === '食ぶ') baseForm = '食べる';
+	if (baseForm === 'こらる') baseForm = 'こられる';
+	if (baseForm === '食べらる') baseForm = '食べられる';
 
 	for (const candidate of candidates) {
-		baseForm = candidate;
 		if (candidate.endsWith('する')) {
 			allForms.push(...buildSuruForms(candidate));
 			continue;
@@ -303,7 +501,8 @@ export function expandSearchQuery(query: string): QueryExpansion {
 		};
 	}
 
-	const partOfSpeech = classifyPartOfSpeech(normalizedQuery);
+	const candidates = deriveDeinflections(normalizedQuery);
+	const partOfSpeech = classifyPartOfSpeech(normalizedQuery, candidates);
 	if (partOfSpeech === 'verb') {
 		const verb = buildVerbForms(normalizedQuery);
 		return { normalizedQuery, partOfSpeech, baseForm: verb.baseForm, terms: verb.terms };
