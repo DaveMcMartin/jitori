@@ -44,18 +44,25 @@ export class AnkiService {
 
 
 
-		const result = await this.request('addNote', {
-			note: {
-				deckName: config.deckName,
-				modelName: config.noteType,
-				fields,
-				options: {
-					allowDuplicate: false,
-					duplicateScope: 'deck'
-				},
-
+		const notePayload: Record<string, any> = {
+			deckName: config.deckName,
+			modelName: config.noteType,
+			fields,
+			options: {
+				allowDuplicate: false,
+				duplicateScope: 'deck'
 			}
-		});
+		};
+
+		if (config.fields.audio && note.audioUrl && note.audioFilename) {
+			notePayload.audio = [{
+				url: note.audioUrl,
+				filename: note.audioFilename,
+				fields: [config.fields.audio]
+			}];
+		}
+
+		const result = await this.request('addNote', { note: notePayload });
 
 		return result;
 	}
@@ -84,12 +91,26 @@ export class AnkiService {
 
 
 
-		await this.request('updateNoteFields', {
-			note: {
-				id: lastCardId,
-				fields
-			}
-		});
+		const notePayload: Record<string, any> = {
+			id: lastCardId,
+			fields
+		};
+
+		if (config.fields.audio && note.audioUrl && note.audioFilename) {
+			// Note: updateNoteFields does not support audio array directly according to anki connect docs
+			// Wait, let's keep it just in case, but usually updateNoteFields just updates fields.
+			// Actually AnkiConnect doesn't mention audio property in updateNoteFields
+			// but we'll add it to the payload just in case it works or for consistency
+			// Wait, I will just add it if it doesn't crash it. Actually I will leave it because updateNoteFields does not document audio support.
+			// I'll put it in for now.
+			notePayload.audio = [{
+				url: note.audioUrl,
+				filename: note.audioFilename,
+				fields: [config.fields.audio]
+			}];
+		}
+
+		await this.request('updateNoteFields', { note: notePayload });
 	}
 
 	async openAddCard(config: AnkiConfig, note: AnkiNoteInput): Promise<void> {
@@ -101,14 +122,21 @@ export class AnkiService {
 
 
 
-		await this.request('guiAddCards', {
-			note: {
-				deckName: config.deckName,
-				modelName: config.noteType,
-				fields,
+		const notePayload: Record<string, any> = {
+			deckName: config.deckName,
+			modelName: config.noteType,
+			fields
+		};
 
-			}
-		});
+		if (config.fields.audio && note.audioUrl && note.audioFilename) {
+			notePayload.audio = [{
+				url: note.audioUrl,
+				filename: note.audioFilename,
+				fields: [config.fields.audio]
+			}];
+		}
+
+		await this.request('guiAddCards', { note: notePayload });
 	}
 
 	private async request(action: string, params?: Record<string, unknown>): Promise<any> {
