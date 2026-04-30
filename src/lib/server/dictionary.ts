@@ -1,3 +1,4 @@
+import { expandSearchQuery } from '$lib/server/query-expansion';
 import type { DictionaryEntry, KanjiEntry } from '$lib/types';
 
 const DEFAULT_LIMIT = 20;
@@ -225,8 +226,12 @@ export async function searchDictionary(db: any, query: string, limit: number): P
 	if (!normalized) {
 		return [];
 	}
+
+	const expansion = expandSearchQuery(normalized);
+	const baseForm = expansion.baseForm || normalized;
 	const normalizedLimit = normalizeDictionaryLimit(limit);
 	const lower = normalized.toLowerCase();
+
 	const result = (await db
 		.prepare(
 			`
@@ -241,7 +246,9 @@ export async function searchDictionary(db: any, query: string, limit: number): P
 			WHERE
 				t.term = ?
 				OR t.term LIKE ?
+				OR e.primary_kanji = ?
 				OR e.primary_kanji LIKE ?
+				OR e.primary_reading = ?
 				OR e.primary_reading LIKE ?
 				OR lower(e.gloss) LIKE ?
 			GROUP BY e.ent_seq
@@ -260,12 +267,14 @@ export async function searchDictionary(db: any, query: string, limit: number): P
 		.bind(
 			normalized,
 			`${normalized}%`,
-			`${normalized}%`,
-			`${normalized}%`,
+			baseForm,
+			`${baseForm}%`,
+			baseForm,
+			`${baseForm}%`,
 			`%${lower}%`,
 			normalized,
-			normalized,
-			normalized,
+			baseForm,
+			baseForm,
 			normalizedLimit
 		)
 		.all()) as { results?: DictionaryRow[] };
