@@ -208,6 +208,16 @@
 						{/each}
 					</select>
 				</div>
+
+				<div class="field">
+					<label for="field-audio">Sentence Audio</label>
+					<select id="field-audio" bind:value={$configStore.anki.fields.audio}>
+						<option value="">-- None --</option>
+						{#each noteFields as field}
+							<option value={field}>{field}</option>
+						{/each}
+					</select>
+				</div>
 			</div>
 		{/if}
 	</div>
