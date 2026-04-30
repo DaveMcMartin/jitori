@@ -420,8 +420,6 @@ function buildVerbForms(query: string): { baseForm: string; terms: string[] } {
 	// If the original query is already a baseform (ends in godan/ichidan ending, we might just keep it if no better candidate exists).
 	// Let's iterate candidates and pick the first one that ends in a dictionary form ending, skipping the original query if possible.
 
-	let foundBetterBase = false;
-
 	// Convert candidates back to array to allow reverse iteration
 	// Deinflection typically pushes the most accurate dictionary forms later (like nai-form -> ru, te-form -> ru, then ending mapping).
 	// We want to prioritize standard dictionary forms.
@@ -434,7 +432,6 @@ function buildVerbForms(query: string): { baseForm: string; terms: string[] } {
 				// Prevent weird overrides
 				if (candidate !== '震う') {
 					baseForm = candidate;
-					foundBetterBase = true;
 					break;
 				}
 			}
