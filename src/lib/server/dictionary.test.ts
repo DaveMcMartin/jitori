@@ -23,7 +23,6 @@ describe('normalizeDictionaryLimit', () => {
 	});
 });
 
-
 describe('parseGloss', () => {
 	it('should return regular string as is', () => {
 		expect(parseGloss("to eat")).toBe("to eat");
@@ -61,5 +60,10 @@ describe('parseGloss', () => {
 	it('should handle double-double quotes formatting', () => {
 		const input = '{"content": {"content": "voiced repetition mark in katakana", "tag": "li"}, "data": {"content": "infoGlossary"}, "lang": "en", "style": {"listStyleType": ""ℹ️ ""}, "tag": "ul"}';
 		expect(parseGloss(input)).toBe("voiced repetition mark in katakana");
+	});
+
+	it('should handle unescaped quotes inside double quoted strings', () => {
+		const input = '{"content": [{"content": "one"s school", "tag": "li"}, {"content": "school one attends or works at", "tag": "li"}], "data": {"content": "glossary"}, "lang": "en", "style": {"listStyleType": "circle"}, "tag": "ul"}; [{"content": {"content": "driving school", "tag": "li"}, "data": {"content": "glossary"}, "lang": "en", "style": {"listStyleType": "circle"}, "tag": "ul"}, {"content": {"content": ["see: ", {"content": "自動車学校", "href": "?query=自動車学校&wildcards=off", "lang": "ja", "tag": "a"}, {"content": " driving school", "data": {"content": "refGlosses"}, "style": {"fontSize": "65%", "verticalAlign": "middle"}, "tag": "span"}], "tag": "li"}, "data": {"content": "references"}, "lang": "en", "style": {"listStyleType": ""➡️ ""}, "tag": "ul"}]';
+		expect(parseGloss(input)).toBe("one\"s school; school one attends or works at; driving school; see: 自動車学校 driving school");
 	});
 });

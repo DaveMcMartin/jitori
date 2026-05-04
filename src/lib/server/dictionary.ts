@@ -76,6 +76,11 @@ function splitGlosses(str: string): string[] {
 				continue;
 			}
 			if (char === stringChar) {
+				const prevChar = i > 0 ? str[i - 1] : '';
+				if (/[a-zA-Z]/.test(prevChar) && /[a-zA-Z]/.test(nextChar)) {
+					current += char;
+					continue;
+				}
 				inString = false;
 			}
 			current += char;
@@ -173,6 +178,8 @@ export function parseGloss(glossStr: string): string {
 
 		// Fix double-double quotes from broken SQL replace
 		let jsonStr = trimmed.replace(/""([^"]+)""/g, '"$1"');
+		jsonStr = jsonStr.replace(/([a-zA-Z])"([a-zA-Z])/g, '$1\\"$2');
+		jsonStr = jsonStr.replace(/([a-zA-Z])"([a-zA-Z])/g, '$1\\"$2');
 
 		try {
 			const parsed = JSON.parse(jsonStr);
