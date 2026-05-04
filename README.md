@@ -2,6 +2,8 @@
 
 A Japanese sentence search application with conjugation-aware lookup, audio playback, and Anki export.
 
+![Jitori Screenshot](./static/screenshot.jpeg)
+
 ## Features
 
 - **Sentences Table**: 58,000+ real Japanese sentences with high-quality audio. All sentences come from the [Ankidrone Sentence Pack](https://tatsumoto.neocities.org/blog/ankidrone-sentence-pack) by Tatsumoto.
