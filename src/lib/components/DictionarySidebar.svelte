@@ -56,10 +56,30 @@
 
 	<div class="content" bind:this={contentElement}>
 		{#if isSearching}
-			<div class="empty-state">
-				<Loader2 size={32} class="spin" />
-				<p>Searching dictionary...</p>
-			</div>
+			<section class="panel">
+				<div class="skeleton-title" aria-hidden="true"></div>
+				<div class="kanji-grid">
+					{#each Array(2) as _}
+						<div class="kanji-chip skeleton-kanji-chip">
+							<div class="skeleton-kanji-literal"></div>
+							<div class="skeleton-kanji-meaning"></div>
+						</div>
+					{/each}
+				</div>
+			</section>
+
+			<section class="panel">
+				<div class="skeleton-title" aria-hidden="true"></div>
+				<div class="entries">
+					{#each Array(3) as _}
+						<article class="entry skeleton-entry">
+							<div class="head skeleton-entry-head"></div>
+							<div class="skeleton-entry-gloss"></div>
+							<div class="skeleton-entry-tags"></div>
+						</article>
+					{/each}
+				</div>
+			</section>
 		{:else if !query.trim()}
 			<div class="empty-state">
 				<Ghost size={32} />
@@ -272,6 +292,72 @@
 		background: #1e293b;
 		padding: 0.2rem 0.5rem;
 		border-radius: 0.25rem;
+	}
+
+	.skeleton-title {
+		height: 0.8rem;
+		width: 6rem;
+		background: #1e293b;
+		border-radius: 0.25rem;
+		margin-bottom: 0.75rem;
+		animation: skeleton-pulse 1.5s ease-in-out infinite;
+	}
+
+	.skeleton-kanji-chip {
+		pointer-events: none;
+	}
+
+	.skeleton-kanji-literal {
+		height: 2rem;
+		width: 2rem;
+		background: #1e293b;
+		border-radius: 0.25rem;
+		animation: skeleton-pulse 1.5s ease-in-out infinite;
+	}
+
+	.skeleton-kanji-meaning {
+		height: 1rem;
+		width: 4rem;
+		background: #1e293b;
+		border-radius: 0.25rem;
+		animation: skeleton-pulse 1.5s ease-in-out infinite;
+	}
+
+	.skeleton-entry {
+		pointer-events: none;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	.skeleton-entry-head {
+		height: 1.25rem;
+		width: 50%;
+		background: #1e293b;
+		border-radius: 0.25rem;
+		animation: skeleton-pulse 1.5s ease-in-out infinite;
+	}
+
+	.skeleton-entry-gloss {
+		height: 1rem;
+		width: 80%;
+		background: #1e293b;
+		border-radius: 0.25rem;
+		animation: skeleton-pulse 1.5s ease-in-out infinite;
+	}
+
+	.skeleton-entry-tags {
+		height: 1rem;
+		width: 30%;
+		background: #1e293b;
+		border-radius: 0.25rem;
+		margin-top: 0.2rem;
+		animation: skeleton-pulse 1.5s ease-in-out infinite;
+	}
+
+	@keyframes skeleton-pulse {
+		0%, 100% { opacity: 0.5; }
+		50% { opacity: 1; }
 	}
 
 	:global(.spin) {

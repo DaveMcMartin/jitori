@@ -170,6 +170,8 @@
 		}
 
 		isSearching = true;
+		results = [];
+		expansion = null;
 		try {
 			const response = await sentenceSearchService.searchDetailed(normalized, 80);
 			results = response.results;
@@ -257,7 +259,21 @@
 		{/if}
 
 		<section class="results">
-			{#if results.length === 0 && !isSearching}
+			{#if isSearching}
+				{#each Array(5) as _}
+					<article class="sentence-card skeleton-card">
+						<div class="sentence-main">
+							<div class="skeleton-line skeleton-jp"></div>
+							<div class="skeleton-line skeleton-translation"></div>
+						</div>
+						<div class="actions">
+							<div class="skeleton-btn"></div>
+							<div class="skeleton-btn"></div>
+							<div class="skeleton-btn"></div>
+						</div>
+					</article>
+				{/each}
+			{:else if results.length === 0}
 				<div class="empty">
 					<Search size={22} />
 					<p>Search to see your sentence list here.</p>
@@ -607,6 +623,40 @@
 		border-color: #2563eb;
 		background: rgba(37, 99, 235, 0.18);
 		color: #bfdbfe;
+	}
+
+	.skeleton-card {
+		pointer-events: none;
+	}
+
+	.skeleton-line {
+		background: #1e293b;
+		border-radius: 0.25rem;
+		animation: skeleton-pulse 1.5s ease-in-out infinite;
+	}
+
+	.skeleton-jp {
+		height: 2rem;
+		width: 85%;
+	}
+
+	.skeleton-translation {
+		height: 1.25rem;
+		width: 60%;
+		margin-top: 0.25rem;
+	}
+
+	.skeleton-btn {
+		height: 1.8rem;
+		width: 6rem;
+		background: #1e293b;
+		border-radius: 0.5rem;
+		animation: skeleton-pulse 1.5s ease-in-out infinite;
+	}
+
+	@keyframes skeleton-pulse {
+		0%, 100% { opacity: 0.5; }
+		50% { opacity: 1; }
 	}
 
 	:global(.spinner) {
