@@ -100,6 +100,39 @@ export class AnkiService {
 		});
 	}
 
+
+	async canAddNotesWithErrorDetail(
+		config: AnkiConfig,
+		note: AnkiNoteInput
+	): Promise<{ canAdd: boolean; error?: string }[]> {
+		const fields: Record<string, string> = {};
+		if (config.fields.sentence) fields[config.fields.sentence] = note.sentence;
+		if (config.fields.translation) fields[config.fields.translation] = note.translation;
+		if (config.fields.word) fields[config.fields.word] = note.word;
+		if (config.fields.wordDefinition) fields[config.fields.wordDefinition] = note.wordDefinition;
+
+		const audioObj = (config.fields.audio && note.audioUrl && note.audioFilename)
+			? [{
+				url: note.audioUrl,
+				filename: note.audioFilename,
+				fields: [config.fields.audio]
+			}]
+			: undefined;
+
+		const result = await this.request('canAddNotesWithErrorDetail', {
+			notes: [
+				{
+					deckName: config.deckName,
+					modelName: config.noteType,
+					fields,
+					...(audioObj ? { audio: audioObj } : {})
+				}
+			]
+		});
+
+		return result;
+	}
+
 	async openAddCard(config: AnkiConfig, note: AnkiNoteInput): Promise<void> {
 		const fields: Record<string, string> = {};
 		if (config.fields.sentence) fields[config.fields.sentence] = note.sentence;
