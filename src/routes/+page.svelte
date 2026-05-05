@@ -3,6 +3,8 @@
 	import { Search, Play, Pause, Download, ExternalLink, Loader2, BookText, X, SearchX, Info } from 'lucide-svelte';
 	import DictionarySidebar from '$lib/components/DictionarySidebar.svelte';
 	import Sidebar from '$lib/components/Sidebar.svelte';
+	import Modal from '$lib/components/Modal.svelte';
+
 	import GithubIcon from '$lib/components/GithubIcon.svelte';
 	import { sentenceSearchService, type SentenceSearchExpansion } from '$lib/services/sentence-search';
 	import { dictionaryService } from '$lib/services/dictionary';
@@ -23,6 +25,10 @@
 	let selectedKanji = $state<KanjiEntry | null>(null);
 	let isLoadingKanji = $state(false);
 	let kanjiError = $state('');
+
+	let showDuplicateModal = $state(false);
+	let duplicateSentence = $state<StoredSentence | null>(null);
+
 
 	function clearMessages() {
 		statusMessage = '';
@@ -127,22 +133,19 @@
 		};
 	}
 
-	async function exportToAnki(sentence: StoredSentence) {
-		clearMessages();
-		if (!$configStore.anki.deckName || !$configStore.anki.noteType) {
-			errorMessage = 'Set your Anki deck and note type before exporting.';
-			return;
-		}
+	async function confirmExport() {
+		if (!duplicateSentence) return;
+		const sentence = duplicateSentence;
+		duplicateSentence = null;
+		showDuplicateModal = false;
 
 		isExporting = sentence.id;
 		try {
 			const input = buildAnkiInput(sentence);
-			
 			try {
 				const dictResult = await dictionaryService.search(input.word, 1);
 				if (dictResult.entries.length > 0) {
-					const entry = dictResult.entries[0];
-					input.wordDefinition = entry.gloss;
+					input.wordDefinition = dictResult.entries[0].gloss;
 				}
 			} catch (e) {
 				console.warn('Failed to fetch dictionary definition for Anki', e);
@@ -155,6 +158,47 @@
 			errorMessage = error instanceof Error ? error.message : 'Failed to open Anki.';
 		} finally {
 			isExporting = null;
+		}
+	}
+
+	async function exportToAnki(sentence: StoredSentence) {
+		clearMessages();
+		if (!$configStore.anki.deckName || !$configStore.anki.noteType) {
+			errorMessage = 'Set your Anki deck and note type before exporting.';
+			return;
+		}
+
+		isExporting = sentence.id;
+		try {
+			const input = buildAnkiInput(sentence);
+			ankiService.setUrl($configStore.anki.url);
+
+			const duplicateCheck = await ankiService.canAddNotesWithErrorDetail($configStore.anki, input).catch(() => null);
+			
+			if (duplicateCheck && duplicateCheck.length > 0 && !duplicateCheck[0].canAdd) {
+				duplicateSentence = sentence;
+				showDuplicateModal = true;
+				isExporting = null;
+				return;
+			}
+
+			try {
+				const dictResult = await dictionaryService.search(input.word, 1);
+				if (dictResult.entries.length > 0) {
+					input.wordDefinition = dictResult.entries[0].gloss;
+				}
+			} catch (e) {
+				console.warn('Failed to fetch dictionary definition for Anki', e);
+			}
+
+			await ankiService.openAddCard($configStore.anki, input);
+			statusMessage = 'Anki Add window opened.';
+		} catch (error) {
+			errorMessage = error instanceof Error ? error.message : 'Failed to open Anki.';
+		} finally {
+			if (showDuplicateModal === false) {
+				isExporting = null;
+			}
 		}
 	}
 
@@ -326,6 +370,15 @@
 	</main>
 	<Sidebar />
 </div>
+
+<Modal
+	bind:show={showDuplicateModal}
+	title="Duplicate Card Detected"
+	message="It looks like this card already exists in your Anki deck. Do you want to add it anyway?"
+	confirmText="Add Anyway"
+	onConfirm={confirmExport}
+	onCancel={() => { duplicateSentence = null; showDuplicateModal = false; }}
+/>
 
 {#if isLoadingKanji || selectedKanji || kanjiError}
 	<div class="kanji-overlay">
