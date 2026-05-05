@@ -239,6 +239,9 @@ export async function searchDictionary(db: any, query: string, limit: number): P
 	const normalizedLimit = normalizeDictionaryLimit(limit);
 	const lower = normalized.toLowerCase();
 
+	const endTerm = normalized + '\uFFFF';
+	const endBaseForm = baseForm + '\uFFFF';
+
 	const result = (await db
 		.prepare(
 			`
@@ -249,22 +252,19 @@ export async function searchDictionary(db: any, query: string, limit: number): P
 				e.gloss,
 				e.parts_of_speech
 			FROM jmdict_entry e
-			LEFT JOIN jmdict_term t ON t.ent_seq = e.ent_seq
 			WHERE
-				t.term = ?
-				OR t.term LIKE ?
-				OR e.primary_kanji = ?
-				OR e.primary_kanji LIKE ?
-				OR e.primary_reading = ?
-				OR e.primary_reading LIKE ?
-				OR lower(e.gloss) LIKE ?
-			GROUP BY e.ent_seq
+				e.primary_kanji >= ? AND e.primary_kanji < ?
+				OR e.primary_reading >= ? AND e.primary_reading < ?
+				OR e.ent_seq IN (
+					SELECT ent_seq
+					FROM jmdict_term
+					WHERE term >= ? AND term < ?
+				)
 			ORDER BY
 				CASE
-					WHEN t.term = ? THEN 0
-					WHEN e.primary_kanji = ? THEN 1
-					WHEN e.primary_reading = ? THEN 2
-					ELSE 3
+					WHEN e.primary_kanji = ? THEN 0
+					WHEN e.primary_reading = ? THEN 1
+					ELSE 2
 				END,
 				length(e.primary_kanji) ASC,
 				e.ent_seq ASC
@@ -272,14 +272,12 @@ export async function searchDictionary(db: any, query: string, limit: number): P
 			`
 		)
 		.bind(
-			normalized,
-			`${normalized}%`,
 			baseForm,
-			`${baseForm}%`,
+			endBaseForm,
 			baseForm,
-			`${baseForm}%`,
-			`%${lower}%`,
+			endBaseForm,
 			normalized,
+			endTerm,
 			baseForm,
 			baseForm,
 			normalizedLimit

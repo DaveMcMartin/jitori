@@ -47,9 +47,7 @@ export type SentenceSearchResult = {
 	expansion: QueryExpansion;
 };
 
-function createInstrClause(column: string, size: number): string {
-	return Array.from({ length: size }, () => `instr(${column}, ?) > 0`).join(' OR ');
-}
+
 
 export async function searchSentences(db: any, query: string, limit: number): Promise<SentenceSearchResult> {
 	const expansion = expandSearchQuery(query);
@@ -58,12 +56,9 @@ export async function searchSentences(db: any, query: string, limit: number): Pr
 	}
 
 	const normalizedLimit = normalizeSearchLimit(limit);
-	const loweredTerms = expansion.terms.map((term) => term.toLowerCase());
-	const sentenceClause = createInstrClause('sentence', expansion.terms.length);
-	const wordClause = createInstrClause('word', expansion.terms.length);
-	const translationClause = createInstrClause('lower(translation)', loweredTerms.length);
-	const sourceClause = createInstrClause('lower(source)', loweredTerms.length);
-	const wildcardClause = `${sentenceClause} OR ${wordClause} OR ${translationClause} OR ${sourceClause}`;
+	const endTerm = expansion.normalizedQuery + '\uFFFF';
+	const endBaseForm = expansion.baseForm + '\uFFFF';
+
 	const result = (await db
 		.prepare(
 			`
@@ -79,17 +74,15 @@ export async function searchSentences(db: any, query: string, limit: number): Pr
 				created_at
 			FROM sentence
 			WHERE
-				${wildcardClause}
+				sentence >= ? AND sentence < ?
+				OR word >= ? AND word < ?
 			ORDER BY
 				CASE
 					WHEN sentence = ? THEN 0
-					WHEN instr(sentence, ?) = 1 THEN 1
+					WHEN sentence >= ? AND sentence < ? THEN 1
 					WHEN word = ? THEN 2
-					WHEN instr(word, ?) = 1 THEN 3
-					WHEN lower(translation) = ? THEN 4
-					WHEN instr(lower(translation), ?) = 1 THEN 5
-					WHEN lower(source) = ? THEN 6
-					ELSE 7
+					WHEN word >= ? AND word < ? THEN 3
+					ELSE 4
 				END,
 				length(sentence) ASC,
 				sentence ASC
@@ -97,17 +90,16 @@ export async function searchSentences(db: any, query: string, limit: number): Pr
 			`
 		)
 		.bind(
-			...expansion.terms,
-			...expansion.terms,
-			...loweredTerms,
-			...loweredTerms,
+			expansion.normalizedQuery,
+			endTerm,
+			expansion.baseForm,
+			endBaseForm,
 			expansion.normalizedQuery,
 			expansion.normalizedQuery,
+			endTerm,
 			expansion.baseForm,
 			expansion.baseForm,
-			expansion.normalizedQuery.toLowerCase(),
-			expansion.normalizedQuery.toLowerCase(),
-			expansion.normalizedQuery.toLowerCase(),
+			endBaseForm,
 			normalizedLimit
 		)
 		.all()) as { results?: SentenceRow[] };
