@@ -173,9 +173,11 @@
 			const input = buildAnkiInput(sentence);
 			ankiService.setUrl($configStore.anki.url);
 
-			const duplicateCheck = await ankiService.canAddNotesWithErrorDetail($configStore.anki, input).catch(() => null);
+			const wordField = $configStore.anki.fields.word;
+			const deckQuery = `deck:"${$configStore.anki.deckName}"`;
+			const duplicateCheck = await ankiService.findNotes(`${deckQuery} "${wordField}:${input.word}"`).catch(() => []);
 			
-			if (duplicateCheck && duplicateCheck.length > 0 && !duplicateCheck[0].canAdd) {
+			if (duplicateCheck && duplicateCheck.length > 0) {
 				duplicateSentence = sentence;
 				showDuplicateModal = true;
 				isExporting = null;
