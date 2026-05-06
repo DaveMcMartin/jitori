@@ -77,14 +77,7 @@ export async function searchSentences(db: any, query: string, limit: number): Pr
 				sentence >= ? AND sentence < ?
 				OR word >= ? AND word < ?
 			ORDER BY
-				CASE
-					WHEN sentence = ? THEN 0
-					WHEN sentence >= ? AND sentence < ? THEN 1
-					WHEN word = ? THEN 2
-					WHEN word >= ? AND word < ? THEN 3
-					ELSE 4
-				END,
-				length(sentence) ASC,
+				sentence_length ASC,
 				sentence ASC
 			LIMIT ?
 			`
@@ -92,12 +85,6 @@ export async function searchSentences(db: any, query: string, limit: number): Pr
 		.bind(
 			expansion.normalizedQuery,
 			endTerm,
-			expansion.baseForm,
-			endBaseForm,
-			expansion.normalizedQuery,
-			expansion.normalizedQuery,
-			endTerm,
-			expansion.baseForm,
 			expansion.baseForm,
 			endBaseForm,
 			normalizedLimit
