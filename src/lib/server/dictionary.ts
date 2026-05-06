@@ -261,11 +261,6 @@ export async function searchDictionary(db: any, query: string, limit: number): P
 					WHERE term >= ? AND term < ?
 				)
 			ORDER BY
-				CASE
-					WHEN e.primary_kanji = ? THEN 0
-					WHEN e.primary_reading = ? THEN 1
-					ELSE 2
-				END,
 				length(e.primary_kanji) ASC,
 				e.ent_seq ASC
 			LIMIT ?
@@ -278,8 +273,6 @@ export async function searchDictionary(db: any, query: string, limit: number): P
 			endBaseForm,
 			normalized,
 			endTerm,
-			baseForm,
-			baseForm,
 			normalizedLimit
 		)
 		.all()) as { results?: DictionaryRow[] };
