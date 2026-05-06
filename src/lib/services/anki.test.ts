@@ -37,4 +37,17 @@ describe('AnkiService', () => {
 		}));
 		expect(result).toEqual(mockResult);
 	});
+
+	it('should call findNotes correctly', async () => {
+		const mockResult = [123456789];
+		(global.fetch as any).mockResolvedValue({
+			ok: true,
+			json: async () => ({ result: mockResult, error: null })
+		});
+
+		const query = 'deck:"TestDeck" "Word:Hello"';
+		const result = await ankiService.findNotes(query);
+
+		expect(result).toEqual(mockResult);
+	});
 });
