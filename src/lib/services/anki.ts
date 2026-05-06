@@ -24,6 +24,10 @@ export class AnkiService {
 		return this.request('deckNames');
 	}
 
+	async findNotes(query: string): Promise<number[]> {
+		return this.request("findNotes", { query });
+	}
+
 	async getNoteTypes(): Promise<string[]> {
 		return this.request('modelNames');
 	}
