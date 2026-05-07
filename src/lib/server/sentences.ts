@@ -56,43 +56,48 @@ export async function searchSentences(db: any, query: string, limit: number): Pr
 	}
 
 	const normalizedLimit = normalizeSearchLimit(limit);
-	const endTerm = expansion.normalizedQuery + '\uFFFF';
-	const endBaseForm = expansion.baseForm + '\uFFFF';
 
-	const result = (await db
-		.prepare(
-			`
-			SELECT
-				id,
-				source,
-				audio_path,
-				audio_url,
-				sentence,
-				translation,
-				word,
-				word_definition,
-				created_at
-			FROM sentence
-			WHERE
-				sentence >= ? AND sentence < ?
-				OR word >= ? AND word < ?
-			ORDER BY
-				sentence_length ASC,
-				sentence ASC
-			LIMIT ?
-			`
-		)
-		.bind(
-			expansion.normalizedQuery,
-			endTerm,
-			expansion.baseForm,
-			endBaseForm,
-			normalizedLimit
-		)
-		.all()) as { results?: SentenceRow[] };
+	const conditions: string[] = [];
+	const binds: any[] = [];
+
+	// Add search logic for each term
+	for (const term of expansion.terms) {
+	    const likeTerm = '%' + term + '%';
+		conditions.push('(sentence LIKE ? OR word LIKE ? OR translation LIKE ?)');
+		binds.push(likeTerm, likeTerm, likeTerm);
+	}
+    binds.push(normalizedLimit);
+
+    // If we're hitting D1, we might need to await the results properly
+    // db is expected to be a Cloudflare D1 database or better-sqlite3 instance
+	const stmt = db.prepare(
+		`
+		SELECT
+			id,
+			source,
+			audio_path,
+			audio_url,
+			sentence,
+			translation,
+			word,
+			word_definition,
+			created_at
+		FROM sentence
+		WHERE
+			${conditions.join(' OR ')}
+		ORDER BY
+			sentence_length ASC,
+			sentence ASC
+		LIMIT ?
+		`
+	).bind(...binds);
+
+	const result = (await stmt.all()) as { results?: SentenceRow[] };
+    // better-sqlite3 returns an array directly, whereas Cloudflare D1 returns an object with results
+    const rows = Array.isArray(result) ? result : (result.results ?? []);
 
 	return {
-		results: (result.results ?? []).map(mapSentenceRow),
+		results: rows.map(mapSentenceRow),
 		expansion
 	};
 }
