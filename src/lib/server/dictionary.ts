@@ -130,6 +130,9 @@ function pythonReprToJson(str: string): string {
 			if (char === "'" && prev !== '\\') {
 				inSingleQuote = false;
 				result += '"';
+			} else if (char === '\\' && str[i + 1] === "'") {
+				result += "'";
+				i++;
 			} else if (char === '"') {
 				result += '\\"';
 			} else {

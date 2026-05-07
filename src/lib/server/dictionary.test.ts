@@ -66,4 +66,9 @@ describe('parseGloss', () => {
 		const input = '{"content": [{"content": "one"s school", "tag": "li"}, {"content": "school one attends or works at", "tag": "li"}], "data": {"content": "glossary"}, "lang": "en", "style": {"listStyleType": "circle"}, "tag": "ul"}; [{"content": {"content": "driving school", "tag": "li"}, "data": {"content": "glossary"}, "lang": "en", "style": {"listStyleType": "circle"}, "tag": "ul"}, {"content": {"content": ["see: ", {"content": "自動車学校", "href": "?query=自動車学校&wildcards=off", "lang": "ja", "tag": "a"}, {"content": " driving school", "data": {"content": "refGlosses"}, "style": {"fontSize": "65%", "verticalAlign": "middle"}, "tag": "span"}], "tag": "li"}, "data": {"content": "references"}, "lang": "en", "style": {"listStyleType": ""➡️ ""}, "tag": "ul"}]';
 		expect(parseGloss(input)).toBe("one\"s school; school one attends or works at; driving school; see: 自動車学校 driving school");
 	});
+
+	it('should handle negative question gloss with escaped single quotes inside single quotes', () => {
+		const input = `[{'content': {'content': 'negative question', 'tag': 'li'}, 'data': {'content': 'glossary'}, 'lang': 'en', 'style': {'listStyleType': 'circle'}, 'tag': 'ul'}, {'content': {'content': 'question asked in the negative (e.g. "Can\\'t you read Japanese?")', 'tag': 'li'}, 'data': {'content': 'infoGlossary'}, 'lang': 'en', 'style': {'listStyleType': "'ℹ️ '"}, 'tag': 'ul'}]`;
+		expect(parseGloss(input)).toBe(`negative question; question asked in the negative (e.g. "Can't you read Japanese?")`);
+	});
 });
