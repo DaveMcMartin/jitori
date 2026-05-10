@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { Settings, Database, Check, AlertCircle, RefreshCw, Save, Info } from 'lucide-svelte';
-	import GithubIcon from '$lib/components/GithubIcon.svelte';
 	import { configStore, defaultConfig } from '$lib/stores/config';
 	import { ankiService } from '$lib/services/anki';
 	import { saveToStorage, loadFromStorage } from '$lib/services/crypto';
@@ -169,6 +168,15 @@
 			<div class="mapping">
 				<h3>Field Mapping</h3>
 
+				<div class="anki-info" style="margin: 0 0 1.25rem 0; width: 100%; box-sizing: border-box;">
+					<Info size={14} style="min-width: 14px;" />
+					<p>
+						Not sure how to set up Anki or what card template to use? Check out this
+						<strong><a href="https://tatsumoto.neocities.org/blog/setting-up-anki" target="_blank" rel="noreferrer">setup guide</a></strong>
+						and this <strong><a href="https://ankiweb.net/shared/info/1557722832" target="_blank" rel="noreferrer">recommended card template</a></strong>.
+					</p>
+				</div>
+
 				<div class="field">
 					<label for="field-sentence">Sentence</label>
 					<select id="field-sentence" bind:value={$configStore.anki.fields.sentence}>
@@ -227,10 +235,6 @@
 			<Save size={14} />
 			{isSaving ? 'Saving...' : 'Save'}
 		</button>
-		<a href="https://github.com/DaveMcMartin/jitori" target="_blank" rel="noreferrer" class="github-link">
-			<GithubIcon size={14} />
-			GitHub
-		</a>
 	</div>
 </aside>
 
@@ -395,21 +399,6 @@
 		border-radius: 0.45rem;
 		cursor: pointer;
 		font-weight: 600;
-	}
-
-	.github-link {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		gap: 0.4rem;
-		color: #94a3b8;
-		text-decoration: none;
-		font-size: 0.75rem;
-		transition: color 0.2s;
-	}
-
-	.github-link:hover {
-		color: #f8fafc;
 	}
 
 	@keyframes spin {
