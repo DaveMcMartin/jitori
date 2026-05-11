@@ -16,6 +16,7 @@ export interface AnkiConfig {
 		wordDefinition: string;
 		audio: string;
 	};
+	highlightTargetWord: boolean;
 }
 
 export interface AnkiNoteInput {
