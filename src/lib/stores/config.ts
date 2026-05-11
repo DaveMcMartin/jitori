@@ -12,7 +12,8 @@ export const defaultConfig: AppConfig = {
 			word: '',
 			wordDefinition: '',
 			audio: ''
-		}
+		},
+		highlightTargetWord: false
 	}
 };
 

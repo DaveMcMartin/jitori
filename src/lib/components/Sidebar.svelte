@@ -187,6 +187,11 @@
 					</select>
 				</div>
 
+				<div class="field-checkbox">
+					<input id="highlight-target-word" type="checkbox" bind:checked={$configStore.anki.highlightTargetWord} />
+					<label for="highlight-target-word">Highlight target word</label>
+				</div>
+
 				<div class="field">
 					<label for="field-translation">Translation</label>
 					<select id="field-translation" bind:value={$configStore.anki.fields.translation}>
@@ -349,6 +354,27 @@
 		flex: 1;
 		overflow-y: auto;
 		padding: 1rem 1.25rem;
+	}
+
+	.field-checkbox {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		margin-bottom: 1.5rem;
+	}
+
+	.field-checkbox input[type='checkbox'] {
+		accent-color: var(--primary-color);
+		width: 1.1rem;
+		height: 1.1rem;
+		cursor: pointer;
+	}
+
+	.field-checkbox label {
+		font-size: 0.9rem;
+		font-weight: 500;
+		color: #94a3b8;
+		cursor: pointer;
 	}
 
 	.field {

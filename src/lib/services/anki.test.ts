@@ -17,7 +17,7 @@ describe('AnkiService', () => {
 			url: 'http://localhost:8765',
 			deckName: 'TestDeck',
 			noteType: 'TestModel',
-			fields: { sentence: 'Front', translation: 'Back', word: 'Word', wordDefinition: 'Def', audio: 'Audio' }
+			fields: { sentence: 'Front', translation: 'Back', word: 'Word', wordDefinition: 'Def', audio: 'Audio' }, highlightTargetWord: false
 		};
 
 		const note = {
