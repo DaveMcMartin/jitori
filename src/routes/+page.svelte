@@ -8,6 +8,8 @@
 	import GithubIcon from '$lib/components/GithubIcon.svelte';
 	import { sentenceSearchService, type SentenceSearchExpansion } from '$lib/services/sentence-search';
 	import { dictionaryService } from '$lib/services/dictionary';
+import { highlightTargetWord } from '$lib/utils/highlight';
+
 	import { ankiService } from '$lib/services/anki';
 	import { configStore } from '$lib/stores/config';
 	import type { AnkiNoteInput, KanjiEntry, StoredSentence } from '$lib/types';
@@ -124,7 +126,9 @@
 	function buildAnkiInput(sentence: StoredSentence): AnkiNoteInput {
 		const detectedWord = expansion?.baseForm || query.trim();
 		return {
-			sentence: sentence.sentence,
+			sentence: $configStore.anki.highlightTargetWord
+				? highlightTargetWord(sentence.sentence, sentence.word)
+				: sentence.sentence,
 			translation: sentence.translation,
 			word: detectedWord,
 			wordDefinition: expansion ? `Part of speech: ${expansion.partOfSpeech}` : '',
