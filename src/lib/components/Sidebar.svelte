@@ -168,8 +168,8 @@
 			<div class="mapping">
 				<h3>Field Mapping</h3>
 
-				<div class="anki-info" style="margin: 0 0 1.25rem 0; width: 100%; box-sizing: border-box;">
-					<Info size={14} style="min-width: 14px;" />
+				<div class="anki-info mapping-info">
+					<Info size={14} class="info-icon" />
 					<p>
 						Not sure how to set up Anki or what card template to use? Check out this
 						<strong><a href="https://tatsumoto.neocities.org/blog/setting-up-anki" target="_blank" rel="noreferrer">setup guide</a></strong>
@@ -301,6 +301,16 @@
 
 	.anki-info p strong {
 		color: #cbd5e1;
+	}
+
+	.anki-info.mapping-info {
+		margin: 0 0 1.25rem 0;
+		width: 100%;
+		box-sizing: border-box;
+	}
+
+	:global(.info-icon) {
+		min-width: 14px;
 	}
 
 	.anki-info code {
