@@ -246,7 +246,7 @@
 <style>
 	.sidebar {
 		width: 320px;
-		height: 100%;
+		height: 100vh;
 		border-left: 1px solid #1f2937;
 		background: #0f172a;
 		display: flex;
@@ -353,6 +353,7 @@
 	.content {
 		flex: 1;
 		overflow-y: auto;
+		min-height: 0;
 		padding: 1rem 1.25rem;
 	}
 

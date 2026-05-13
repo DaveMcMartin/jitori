@@ -127,7 +127,7 @@ import { highlightTargetWord } from '$lib/utils/highlight';
 		const detectedWord = expansion?.baseForm || query.trim();
 		return {
 			sentence: $configStore.anki.highlightTargetWord
-				? highlightTargetWord(sentence.sentence, sentence.word)
+				? highlightTargetWord(sentence.sentence, detectedWord)
 				: sentence.sentence,
 			translation: sentence.translation,
 			word: detectedWord,
