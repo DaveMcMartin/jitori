@@ -34,7 +34,29 @@
 </div>
 
 <style>
+
+	:global(::-webkit-scrollbar) {
+		width: 6px;
+		height: 6px;
+	}
+
+	:global(::-webkit-scrollbar-track) {
+		background: transparent;
+	}
+
+	:global(::-webkit-scrollbar-thumb) {
+		background: rgba(148, 163, 184, 0.3);
+		border-radius: 10px;
+	}
+
+	:global(::-webkit-scrollbar-thumb:hover) {
+		background: rgba(148, 163, 184, 0.5);
+	}
+
 	:global(*) {
+		scrollbar-width: thin;
+		scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
+
 		box-sizing: border-box;
 		margin: 0;
 		padding: 0;
