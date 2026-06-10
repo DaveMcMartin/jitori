@@ -1,59 +1,104 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { highlightTargetWord } from './highlight';
 
+const open = '<span style="color: rgb(0, 170, 0);">';
+const close = '</span>';
+const highlighted = (word: string) => `${open}${word}${close}`;
+
 describe('highlightTargetWord', () => {
-	it('should highlight the exact word in the sentence', () => {
-		const sentence = 'あいうえお順に並べてください。';
-		const targetWord = '順';
-		const result = highlightTargetWord(sentence, targetWord);
-		expect(result).toBe('あいうえお<span style="color: rgb(0, 170, 0);">順</span>に並べてください。');
+	it('highlights an exact kanji noun without consuming its particle', () => {
+		expect(highlightTargetWord('あいうえお順に並べてください。', '順')).toBe(
+			`あいうえお${highlighted('順')}に並べてください。`
+		);
 	});
 
-	it('should return the original sentence if targetWord is empty', () => {
-		const sentence = 'テストです。';
-		const result = highlightTargetWord(sentence, '');
-		expect(result).toBe('テストです。');
+	it('highlights an exact kana noun without consuming adjacent kana', () => {
+		expect(highlightTargetWord('猫のことを話した。', 'こと')).toBe(`猫の${highlighted('こと')}を話した。`);
 	});
 
-	it('should return the original sentence if targetWord is not found', () => {
-		const sentence = 'テストです。';
-		const targetWord = '猫';
-		const result = highlightTargetWord(sentence, targetWord);
-		expect(result).toBe('テストです。');
+	it('returns the original sentence for an empty target', () => {
+		expect(highlightTargetWord('テストです。', '')).toBe('テストです。');
 	});
 
-	it('should highlight multiple occurrences of the target word', () => {
-		const sentence = '猫と猫と犬';
-		const targetWord = '猫';
-		const result = highlightTargetWord(sentence, targetWord);
-		expect(result).toBe('<span style="color: rgb(0, 170, 0);">猫</span>と<span style="color: rgb(0, 170, 0);">猫</span>と犬');
+	it('returns the original sentence when the target is absent', () => {
+		expect(highlightTargetWord('テストです。', '猫')).toBe('テストです。');
 	});
 
-	it('should escape special characters in targetWord', () => {
-		const sentence = 'これは?と+です。';
-		const targetWord = '?';
-		const result = highlightTargetWord(sentence, targetWord);
-		expect(result).toBe('これは<span style="color: rgb(0, 170, 0);">?</span>と+です。');
+	it('highlights every exact occurrence', () => {
+		expect(highlightTargetWord('猫と猫と犬', '猫')).toBe(`${highlighted('猫')}と${highlighted('猫')}と犬`);
+	});
+
+	it('treats regex metacharacters as ordinary text', () => {
+		expect(highlightTargetWord('これは?と+です。', '?')).toBe(`これは${highlighted('?')}と+です。`);
+	});
+
+	it('highlights an ichidan polite past form without consuming punctuation', () => {
+		expect(highlightTargetWord('昨日、美味しいパンを食べました。', '食べる')).toBe(
+			`昨日、美味しいパンを${highlighted('食べました')}。`
+		);
+	});
+
+	it('highlights an ichidan negative form without consuming the following particle', () => {
+		expect(highlightTargetWord('今日は何も食べないでください。', '食べる')).toBe(
+			`今日は何も${highlighted('食べない')}でください。`
+		);
+	});
+
+	it('highlights a godan te form without consuming an auxiliary phrase', () => {
+		expect(highlightTargetWord('手紙を書いてください。', '書く')).toBe(
+			`手紙を${highlighted('書いて')}ください。`
+		);
+	});
+
+	it('highlights the full progressive form when it is generated explicitly', () => {
+		expect(highlightTargetWord('彼は本を読んでいるところだ。', '読む')).toBe(
+			`彼は本を${highlighted('読んでいる')}ところだ。`
+		);
+	});
+
+	it('highlights the irregular te form of 行く', () => {
+		expect(highlightTargetWord('明日学校へ行ってみる。', '行く')).toBe(
+			`明日学校へ${highlighted('行って')}みる。`
+		);
+	});
+
+	it('highlights a conjugated i-adjective without consuming a particle', () => {
+		expect(highlightTargetWord('その映画は面白かったけど長い。', '面白い')).toBe(
+			`その映画は${highlighted('面白かった')}けど長い。`
+		);
+	});
+
+	it('highlights an i-adjective adverbial form without consuming the next word', () => {
+		expect(highlightTargetWord('値段が高くなった。', '高い')).toBe(`値段が${highlighted('高く')}なった。`);
+	});
+
+	it('does not guess that kana after a na-adjective belongs to the target', () => {
+		expect(highlightTargetWord('彼は静かに部屋を出た。', '静か')).toBe(`彼は${highlighted('静か')}に部屋を出た。`);
+	});
+
+	it('does not consume a particle after a dictionary-form verb', () => {
+		expect(highlightTargetWord('魚を食べると元気になる。', '食べる')).toBe(
+			`魚を${highlighted('食べる')}と元気になる。`
+		);
+	});
+
+	it('does not consume an adjacent kana word after an exact noun', () => {
+		expect(highlightTargetWord('順番を確認する。', '順')).toBe(`${highlighted('順')}番を確認する。`);
+	});
+
+	it('highlights differently conjugated occurrences independently', () => {
+		expect(highlightTargetWord('食べる、食べた、食べない。', '食べる')).toBe(
+			`${highlighted('食べる')}、${highlighted('食べた')}、${highlighted('食べない')}。`
+		);
+	});
+
+	it('highlights suru compounds without consuming following kana', () => {
+		expect(highlightTargetWord('毎日勉強していますが、昨日は勉強しなかった。', '勉強する')).toBe(
+			`毎日${highlighted('勉強しています')}が、昨日は${highlighted('勉強しなかった')}。`
+		);
+	});
+
+	it('does not highlight unrelated words sharing only the kanji stem', () => {
+		expect(highlightTargetWord('食事を準備した。', '食べる')).toBe('食事を準備した。');
 	});
 });
-
-	it('should highlight a conjugated verb with kanji stem and trailing okurigana', () => {
-		const sentence = '昨日、美味しいパンを食べました。';
-		const targetWord = '食べる';
-		const result = highlightTargetWord(sentence, targetWord);
-		expect(result).toBe('昨日、美味しいパンを<span style="color: rgb(0, 170, 0);">食べました</span>。');
-	});
-
-	it('should highlight a conjugated i-adjective', () => {
-		const sentence = 'その映画はとても面白かった。';
-		const targetWord = '面白い';
-		const result = highlightTargetWord(sentence, targetWord);
-		expect(result).toBe('その映画はとても<span style="color: rgb(0, 170, 0);">面白かった</span>。');
-	});
-
-	it('should highlight a conjugated na-adjective or verb if stem kanji is present', () => {
-		const sentence = '彼は静かに部屋を出た。';
-		const targetWord = '静か';
-		const result = highlightTargetWord(sentence, targetWord);
-		expect(result).toBe('彼は<span style="color: rgb(0, 170, 0);">静かに</span>部屋を出た。');
-	});
