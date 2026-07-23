@@ -224,15 +224,11 @@ export function parseGloss(glossStr: string): string {
 			return trimmed;
 		}
 
-		// Fix double-double quotes from broken SQL replace
 		let jsonStr = trimmed.replace(/""([^"]+)""/g, '"$1"');
 
-		// Wait, if it has `"one"s school"`, fixJSONQuotes might incorrectly handle it if the adjacent characters are spaces.
-		// Let's also restore the original regex fix that we removed, because it perfectly targets "one"s school" specifically.
 		jsonStr = jsonStr.replace(/([a-zA-Z])"([a-zA-Z])/g, '$1\\"$2');
 		jsonStr = jsonStr.replace(/([a-zA-Z])"([a-zA-Z])/g, '$1\\"$2');
 
-		// Use structural analysis to escape remaining invalid internal double quotes
 		jsonStr = fixJSONQuotes(jsonStr);
 
 		try {
