@@ -85,7 +85,7 @@ function splitGlosses(str: string): string[] {
 			}
 			current += char;
 		} else {
-			if (char === '"' || char === "'") {
+			if ((char === '"' || char === "'") && (braces > 0 || brackets > 0)) {
 				inString = true;
 				stringChar = char;
 				current += char;
@@ -134,7 +134,11 @@ function pythonReprToJson(str: string): string {
 				result += "'";
 				i++;
 			} else if (char === '"') {
-				result += '\\"';
+				if (result.endsWith('\\')) {
+					result += '"';
+				} else {
+					result += '\\"';
+				}
 			} else {
 				result += char;
 			}
@@ -167,6 +171,47 @@ function pythonReprToJson(str: string): string {
 	return result;
 }
 
+
+function fixJSONQuotes(str: string): string {
+	let result = '';
+	for (let i = 0; i < str.length; i++) {
+		if (str[i] === '"') {
+			if (i > 0 && str[i - 1] === '\\') {
+				result += '"';
+				continue;
+			}
+
+			let prevChar = '';
+			for (let j = i - 1; j >= 0; j--) {
+				if (str[j] !== ' ' && str[j] !== '\n' && str[j] !== '\r' && str[j] !== '\t') {
+					prevChar = str[j];
+					break;
+				}
+			}
+
+			let nextChar = '';
+			for (let j = i + 1; j < str.length; j++) {
+				if (str[j] !== ' ' && str[j] !== '\n' && str[j] !== '\r' && str[j] !== '\t') {
+					nextChar = str[j];
+					break;
+				}
+			}
+
+			const isStructuralStart = prevChar === '' || ['{', '[', ':', ','].includes(prevChar);
+			const isStructuralEnd = nextChar === '' || ['}', ']', ':', ','].includes(nextChar);
+
+			if (!isStructuralStart && !isStructuralEnd) {
+				result += '\\"';
+			} else {
+				result += '"';
+			}
+		} else {
+			result += str[i];
+		}
+	}
+	return result;
+}
+
 export function parseGloss(glossStr: string): string {
 	if (!glossStr || (!glossStr.includes('{') && !glossStr.includes('['))) {
 		return glossStr;
@@ -179,10 +224,12 @@ export function parseGloss(glossStr: string): string {
 			return trimmed;
 		}
 
-		// Fix double-double quotes from broken SQL replace
 		let jsonStr = trimmed.replace(/""([^"]+)""/g, '"$1"');
+
 		jsonStr = jsonStr.replace(/([a-zA-Z])"([a-zA-Z])/g, '$1\\"$2');
 		jsonStr = jsonStr.replace(/([a-zA-Z])"([a-zA-Z])/g, '$1\\"$2');
+
+		jsonStr = fixJSONQuotes(jsonStr);
 
 		try {
 			const parsed = JSON.parse(jsonStr);

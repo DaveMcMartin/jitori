@@ -71,4 +71,10 @@ describe('parseGloss', () => {
 		const input = `[{'content': {'content': 'negative question', 'tag': 'li'}, 'data': {'content': 'glossary'}, 'lang': 'en', 'style': {'listStyleType': 'circle'}, 'tag': 'ul'}, {'content': {'content': 'question asked in the negative (e.g. "Can\\'t you read Japanese?")', 'tag': 'li'}, 'data': {'content': 'infoGlossary'}, 'lang': 'en', 'style': {'listStyleType': "'ℹ️ '"}, 'tag': 'ul'}]`;
 		expect(parseGloss(input)).toBe(`negative question; question asked in the negative (e.g. "Can't you read Japanese?")`);
 	});
+
+	it('should handle unescaped quotes inside JSON values', () => {
+		const input = 'as one would expect; just as you"d expect (from); just like (someone); still; all the same; after all; usu. as 〜に; see: さすがに 2. still; all the same; after all; [{"content": {"content": "even ... (e.g. "even a genius")", "tag": "li"}, "data": {"content": "glossary"}, "lang": "en", "style": {"listStyleType": "circle"}, "tag": "ul"}, {"content": {"content": "as さすがの...も", "tag": "li"}, "data": {"content": "notes"}, "lang": "ja", "style": {"listStyleType": ""📝 ""}, "tag": "ul"}]; 流石 遉 有繋 〈さすが〉 ★ 🅁 🅁';
+		const expected = 'as one would expect; just as you"d expect (from); just like (someone); still; all the same; after all; usu. as 〜に; see: さすがに 2. still; all the same; after all; even ... (e.g. "even a genius"); as さすがの...も; 流石 遉 有繋 〈さすが〉 ★ 🅁 🅁';
+		expect(parseGloss(input)).toBe(expected);
+	});
 });
