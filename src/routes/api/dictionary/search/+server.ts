@@ -25,7 +25,7 @@ async function runSearch(platform: App.Platform | undefined, query: string, limi
 	}
 	const [entries, kanji] = await Promise.all([
 		searchDictionary(db, query, limit, language),
-		language === 'en' ? searchKanji(db, query, 12) : Promise.resolve([])
+		searchKanji(db, query, 12)
 	]);
 	return json({ entries, kanji });
 }
