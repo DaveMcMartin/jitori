@@ -38,3 +38,5 @@ logs/*
 
 # temp data
 data/audio/*
+data/wiktionary/*
+data/wiktionary_sql/*

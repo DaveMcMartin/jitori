@@ -12,7 +12,7 @@ import { highlightTargetWord } from '$lib/utils/highlight';
 
 	import { ankiService } from '$lib/services/anki';
 	import { configStore } from '$lib/stores/config';
-	import type { AnkiNoteInput, KanjiEntry, StoredSentence } from '$lib/types';
+	import type { AnkiNoteInput, DictionaryLanguage, KanjiEntry, StoredSentence } from '$lib/types';
 
 	let query = $state('');
 	let sidebarQuery = $state('');
@@ -27,6 +27,7 @@ import { highlightTargetWord } from '$lib/utils/highlight';
 	let selectedKanji = $state<KanjiEntry | null>(null);
 	let isLoadingKanji = $state(false);
 	let kanjiError = $state('');
+	let dictionaryLanguage = $state<DictionaryLanguage>('en');
 
 	let showDuplicateModal = $state(false);
 	let duplicateSentence = $state<StoredSentence | null>(null);
@@ -147,7 +148,7 @@ import { highlightTargetWord } from '$lib/utils/highlight';
 		try {
 			const input = buildAnkiInput(sentence);
 			try {
-				const dictResult = await dictionaryService.search(input.word, 1);
+				const dictResult = await dictionaryService.search(input.word, 1, dictionaryLanguage);
 				if (dictResult.entries.length > 0) {
 					input.wordDefinition = dictResult.entries[0].gloss;
 				}
@@ -189,7 +190,7 @@ import { highlightTargetWord } from '$lib/utils/highlight';
 			}
 
 			try {
-				const dictResult = await dictionaryService.search(input.word, 1);
+				const dictResult = await dictionaryService.search(input.word, 1, dictionaryLanguage);
 				if (dictResult.entries.length > 0) {
 					input.wordDefinition = dictResult.entries[0].gloss;
 				}
@@ -244,7 +245,12 @@ import { highlightTargetWord } from '$lib/utils/highlight';
 </script>
 
 <div class="layout">
-	<DictionarySidebar onKanjiSelect={openKanjiPopup} query={sidebarQuery} />
+	<DictionarySidebar
+		onKanjiSelect={openKanjiPopup}
+		query={sidebarQuery}
+		language={dictionaryLanguage}
+		onLanguageChange={(language) => dictionaryLanguage = language}
+	/>
 	<main class="main">
 		<header class="hero">
 			<img src="/app-icon.svg" alt="Jitori Logo" class="app-logo" />

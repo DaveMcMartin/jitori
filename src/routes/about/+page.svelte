@@ -19,6 +19,20 @@
 	<div class="content">
 		<section class="section">
 			<div class="section-title">
+				<Database size={20} />
+				<h2>Japanese Dictionary Data</h2>
+			</div>
+			<p>
+				Japanese definitions are derived from Japanese Wiktionary through Kaikki and Wiktextract, and are available under the CC BY-SA 4.0 license.
+			</p>
+			<a href="https://ja.wiktionary.org/wiki/Wiktionary:%E8%91%97%E4%BD%9C%E6%A8%A9" target="_blank" rel="noreferrer" class="source-link">
+				<ExternalLink size={16} />
+				Japanese Wiktionary attribution and license
+			</a>
+		</section>
+
+		<section class="section">
+			<div class="section-title">
 				<Info size={20} />
 				<h2>Project Goal</h2>
 			</div>

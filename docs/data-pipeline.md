@@ -21,6 +21,11 @@ To populate the full database, you need to download the following archives and p
 - **File**: `KANJIDIC_english.zip` (Yomitan format recommended)
 - **Description**: Detailed information for 10k+ kanji characters.
 
+### D. Japanese Wiktionary (Japanese Definitions)
+- **Source**: [Kaikki Japanese Wiktionary export](https://kaikki.org/dictionary/Japanese/)
+- **File**: a Japanese JSONL or JSONL.GZ export
+- **License**: [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
+
 ---
 
 ## 2. Full Production Pipeline
@@ -52,7 +57,18 @@ python3 scripts/import_sentences_to_d1.py
 
 # 2. Generate SQL and Import Dictionary
 python3 scripts/import_dictionaries_to_d1.py
+
+# 3. Generate Japanese Wiktionary SQL chunks without importing them
+python3 scripts/import_wiktionary_to_d1.py data/wiktionary/kaikki.org-dictionary-Japanese.jsonl.gz data/wiktionary_sql --chunk-size 10000
+
+# 4. Validate one chunk against the local D1 database, then import every chunk remotely
+npx wrangler d1 execute jitori --local --file=data/wiktionary_sql/wiktionary_0001.sql
+for file in data/wiktionary_sql/*.sql; do
+  npx wrangler d1 execute jitori --remote --file="$file"
+done
 ```
+
+Raw Wiktionary exports and generated SQL chunks are intentionally untracked. The importer only generates deterministic SQL; it never calls Wrangler or modifies a database.
 
 ---
 

@@ -1,11 +1,14 @@
 <script lang="ts">
-	import { Loader2, Languages, BookText, Ghost, SearchX } from 'lucide-svelte';
+	import { onMount } from 'svelte';
+	import { Languages, BookText, Ghost, SearchX } from 'lucide-svelte';
 	import { dictionaryService } from '$lib/services/dictionary';
-	import type { DictionaryEntry, KanjiEntry } from '$lib/types';
+	import type { DictionaryEntry, DictionaryLanguage, KanjiEntry } from '$lib/types';
 
-	let { onKanjiSelect, query = '' } = $props<{
+	let { onKanjiSelect, query = '', language = 'en', onLanguageChange } = $props<{
 		onKanjiSelect: (literal: string) => void;
 		query?: string;
+		language?: DictionaryLanguage;
+		onLanguageChange: (language: DictionaryLanguage) => void;
 	}>();
 
 	let entries = $state<DictionaryEntry[]>([]);
@@ -13,8 +16,26 @@
 	let isSearching = $state(false);
 	let errorMessage = $state('');
 	let contentElement = $state<HTMLElement | null>(null);
+	let searchVersion = 0;
 
-	async function searchDictionary(searchTerm: string) {
+	onMount(() => {
+		const storedLanguage = localStorage.getItem('dictionary-language');
+		if (storedLanguage === 'en' || storedLanguage === 'jp') {
+			onLanguageChange(storedLanguage);
+		}
+	});
+
+	function selectLanguage(nextLanguage: DictionaryLanguage) {
+		if (nextLanguage === language) return;
+		entries = [];
+		kanji = [];
+		errorMessage = '';
+		localStorage.setItem('dictionary-language', nextLanguage);
+		onLanguageChange(nextLanguage);
+	}
+
+	async function searchDictionary(searchTerm: string, selectedLanguage: DictionaryLanguage) {
+		const requestVersion = ++searchVersion;
 		errorMessage = '';
 		const normalized = searchTerm.trim();
 		if (!normalized) {
@@ -22,25 +43,29 @@
 			kanji = [];
 			return;
 		}
-		isSearching = true;
+	isSearching = true;
 		try {
-			const result = await dictionaryService.search(normalized, 25);
+			const result = await dictionaryService.search(normalized, 25, selectedLanguage);
+			if (requestVersion !== searchVersion) return;
 			entries = result.entries;
 			kanji = result.kanji;
 			if (contentElement) {
 				contentElement.scrollTo({ top: 0, behavior: 'smooth' });
 			}
 		} catch (error) {
+			if (requestVersion !== searchVersion) return;
 			entries = [];
 			kanji = [];
 			errorMessage = error instanceof Error ? error.message : 'Dictionary search failed.';
 		} finally {
-			isSearching = false;
+			if (requestVersion === searchVersion) {
+				isSearching = false;
+			}
 		}
 	}
 
 	$effect(() => {
-		searchDictionary(query);
+		searchDictionary(query, language);
 	});
 </script>
 
@@ -48,6 +73,10 @@
 	<div class="sidebar-header">
 		<Languages size={20} />
 		<h2>Dictionary</h2>
+	</div>
+	<div class="language-switch" aria-label="Dictionary language">
+		<button type="button" class:active={language === 'en'} aria-pressed={language === 'en'} onclick={() => selectLanguage('en')}>EN</button>
+		<button type="button" class:active={language === 'jp'} aria-pressed={language === 'jp'} onclick={() => selectLanguage('jp')}>JP</button>
 	</div>
 
 	{#if errorMessage}
@@ -153,6 +182,33 @@
 	.sidebar-header h2 {
 		font-size: 1rem;
 		font-weight: 700;
+		color: #f8fafc;
+	}
+
+	.language-switch {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 0.25rem;
+		margin: 0.75rem 1rem 0;
+		padding: 0.25rem;
+		border: 1px solid #1e293b;
+		border-radius: 0.5rem;
+		background: #0f172a;
+	}
+
+	.language-switch button {
+		border: 0;
+		border-radius: 0.3rem;
+		padding: 0.4rem;
+		background: transparent;
+		color: #94a3b8;
+		font-weight: 700;
+		font-size: 0.75rem;
+		cursor: pointer;
+	}
+
+	.language-switch button.active {
+		background: #2563eb;
 		color: #f8fafc;
 	}
 
@@ -373,4 +429,3 @@
 		}
 	}
 </style>
-
