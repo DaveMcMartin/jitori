@@ -48,6 +48,8 @@ export interface DictionaryEntry {
 	partsOfSpeech: string[];
 }
 
+export type DictionaryLanguage = 'en' | 'jp';
+
 export interface KanjiEntry {
 	literal: string;
 	grade: number | null;

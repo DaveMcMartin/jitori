@@ -1,5 +1,5 @@
 import { expandSearchQuery } from '$lib/server/query-expansion';
-import type { DictionaryEntry, KanjiEntry } from '$lib/types';
+import type { DictionaryEntry, DictionaryLanguage, KanjiEntry } from '$lib/types';
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
@@ -23,6 +23,22 @@ type KanjiRow = {
 	nanori: string;
 	meanings: string;
 };
+
+type WiktionaryRow = {
+	id: number;
+	primary_kanji: string;
+	primary_reading: string;
+	definition: string;
+	parts_of_speech: string;
+};
+
+export function normalizeDictionaryLanguage(value: string | null | undefined): DictionaryLanguage {
+	return value === 'jp' ? 'jp' : 'en';
+}
+
+export function isDictionaryLanguage(value: unknown): value is DictionaryLanguage {
+	return value === 'en' || value === 'jp';
+}
 
 export function normalizeDictionaryLimit(value: number | null | undefined): number {
 	if (value === null || value === undefined || Number.isNaN(value)) {
@@ -264,6 +280,16 @@ function mapDictionaryRow(row: DictionaryRow): DictionaryEntry {
 	};
 }
 
+function mapWiktionaryRow(row: WiktionaryRow): DictionaryEntry {
+	return {
+		entSeq: row.id,
+		primaryKanji: row.primary_kanji,
+		primaryReading: row.primary_reading,
+		gloss: row.definition,
+		partsOfSpeech: splitField(row.parts_of_speech)
+	};
+}
+
 function mapKanjiRow(row: KanjiRow): KanjiEntry {
 	return {
 		literal: row.literal,
@@ -278,7 +304,12 @@ function mapKanjiRow(row: KanjiRow): KanjiEntry {
 	};
 }
 
-export async function searchDictionary(db: any, query: string, limit: number): Promise<DictionaryEntry[]> {
+export async function searchDictionary(
+	db: any,
+	query: string,
+	limit: number,
+	language: DictionaryLanguage = 'en'
+): Promise<DictionaryEntry[]> {
 	const normalized = query.trim();
 	if (!normalized) {
 		return [];
@@ -287,10 +318,28 @@ export async function searchDictionary(db: any, query: string, limit: number): P
 	const expansion = expandSearchQuery(normalized);
 	const baseForm = expansion.baseForm || normalized;
 	const normalizedLimit = normalizeDictionaryLimit(limit);
-	const lower = normalized.toLowerCase();
-
 	const endTerm = normalized + '\uFFFF';
 	const endBaseForm = baseForm + '\uFFFF';
+	if (language === 'jp') {
+		const result = (await db
+			.prepare(
+				`
+				SELECT e.id, e.primary_kanji, e.primary_reading, e.definition, e.parts_of_speech
+				FROM wiktionary_entry e
+				WHERE
+					e.primary_kanji >= ? AND e.primary_kanji < ?
+					OR e.primary_reading >= ? AND e.primary_reading < ?
+					OR e.id IN (
+						SELECT entry_id FROM wiktionary_term WHERE term >= ? AND term < ?
+					)
+				ORDER BY length(e.primary_kanji) ASC, e.id ASC
+				LIMIT ?
+				`
+			)
+			.bind(baseForm, endBaseForm, baseForm, endBaseForm, normalized, endTerm, normalizedLimit)
+			.all()) as { results?: WiktionaryRow[] };
+		return (result.results ?? []).map(mapWiktionaryRow);
+	}
 
 	const result = (await db
 		.prepare(

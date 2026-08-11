@@ -1,5 +1,67 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeDictionaryLimit, parseGloss, extractText } from './dictionary';
+import {
+	isDictionaryLanguage,
+	normalizeDictionaryLanguage,
+	normalizeDictionaryLimit,
+	parseGloss,
+	searchDictionary,
+	extractText
+} from './dictionary';
+
+describe('dictionary language', () => {
+	it('defaults unknown values to English', () => {
+		expect(normalizeDictionaryLanguage(undefined)).toBe('en');
+		expect(normalizeDictionaryLanguage('invalid')).toBe('en');
+		expect(normalizeDictionaryLanguage('jp')).toBe('jp');
+	});
+
+	it('only accepts supported dictionary languages', () => {
+		expect(isDictionaryLanguage('en')).toBe(true);
+		expect(isDictionaryLanguage('jp')).toBe(true);
+		expect(isDictionaryLanguage('ja')).toBe(false);
+	});
+});
+
+describe('Japanese Wiktionary search', () => {
+	it('maps Japanese definitions and searches from the expanded base form', async () => {
+		let sql = '';
+		let values: unknown[] = [];
+		const db = {
+			prepare(statement: string) {
+				sql = statement;
+				return {
+					bind(...parameters: unknown[]) {
+						values = parameters;
+						return {
+							all: async () => ({
+								results: [{
+									id: 12,
+									primary_kanji: '食べる',
+									primary_reading: 'たべる',
+									definition: '食物を口に入れてかむ。',
+									parts_of_speech: 'verb'
+								}]
+							})
+						};
+					}
+				};
+			}
+		};
+
+		const entries = await searchDictionary(db, '食べました', 99, 'jp');
+
+		expect(sql).toContain('wiktionary_entry');
+		expect(sql).toContain('wiktionary_term');
+		expect(values.at(-1)).toBe(50);
+		expect(entries).toEqual([{
+			entSeq: 12,
+			primaryKanji: '食べる',
+			primaryReading: 'たべる',
+			gloss: '食物を口に入れてかむ。',
+			partsOfSpeech: ['verb']
+		}]);
+	});
+});
 
 describe('normalizeDictionaryLimit', () => {
 	it('should return default limit (20) if value is null or undefined or NaN', () => {

@@ -1,4 +1,4 @@
-import type { DictionaryEntry, KanjiEntry } from '$lib/types';
+import type { DictionaryEntry, DictionaryLanguage, KanjiEntry } from '$lib/types';
 
 type SearchPayload = {
 	entries?: DictionaryEntry[];
@@ -13,13 +13,13 @@ export class DictionaryService {
 		return url.replace(/\/$/, '');
 	}
 
-	async search(query: string, limit = 20): Promise<{ entries: DictionaryEntry[]; kanji: KanjiEntry[] }> {
+	async search(query: string, limit = 20, language: DictionaryLanguage = 'en'): Promise<{ entries: DictionaryEntry[]; kanji: KanjiEntry[] }> {
 		const response = await fetch(this.normalizeUrl(this.searchEndpoint), {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json'
 			},
-			body: JSON.stringify({ query, limit })
+			body: JSON.stringify({ query, limit, language })
 		});
 		if (!response.ok) {
 			throw new Error(`Dictionary search failed: ${response.status} ${response.statusText}`);
