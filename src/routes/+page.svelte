@@ -12,7 +12,11 @@ import { highlightTargetWord } from '$lib/utils/highlight';
 
 	import { ankiService } from '$lib/services/anki';
 	import { configStore } from '$lib/stores/config';
-	import type { AnkiNoteInput, DictionaryLanguage, KanjiEntry, StoredSentence } from '$lib/types';
+	import { buildWordAnkiInput } from '$lib/utils/anki-note';
+	import type { AnkiNoteInput, DictionaryEntry, DictionaryLanguage, KanjiEntry, StoredSentence } from '$lib/types';
+
+	const SENTENCE_EXPORT_KEY_PREFIX = 'sentence:';
+	const ENTRY_EXPORT_KEY_PREFIX = 'entry:';
 
 	let query = $state('');
 	let sidebarQuery = $state('');
@@ -30,7 +34,13 @@ import { highlightTargetWord } from '$lib/utils/highlight';
 	let dictionaryLanguage = $state<DictionaryLanguage>('en');
 
 	let showDuplicateModal = $state(false);
-	let duplicateSentence = $state<StoredSentence | null>(null);
+	let pendingDuplicate = $state<{ input: AnkiNoteInput; exportKey: string } | null>(null);
+
+	const exportingEntSeq = $derived(
+		isExporting?.startsWith(ENTRY_EXPORT_KEY_PREFIX)
+			? Number(isExporting.slice(ENTRY_EXPORT_KEY_PREFIX.length))
+			: null
+	);
 
 
 	function clearMessages() {
@@ -124,7 +134,15 @@ import { highlightTargetWord } from '$lib/utils/highlight';
 		}
 	}
 
-	function buildAnkiInput(sentence: StoredSentence): AnkiNoteInput {
+	function sentenceExportKey(sentence: StoredSentence): string {
+		return `${SENTENCE_EXPORT_KEY_PREFIX}${sentence.id}`;
+	}
+
+	function entryExportKey(entry: DictionaryEntry): string {
+		return `${ENTRY_EXPORT_KEY_PREFIX}${entry.entSeq}`;
+	}
+
+	function buildSentenceAnkiInput(sentence: StoredSentence): AnkiNoteInput {
 		const detectedWord = expansion?.baseForm || query.trim();
 		return {
 			sentence: $configStore.anki.highlightTargetWord
@@ -138,64 +156,37 @@ import { highlightTargetWord } from '$lib/utils/highlight';
 		};
 	}
 
-	async function confirmExport() {
-		if (!duplicateSentence) return;
-		const sentence = duplicateSentence;
-		duplicateSentence = null;
-		showDuplicateModal = false;
-
-		isExporting = sentence.id;
+	async function enrichWordDefinition(input: AnkiNoteInput): Promise<void> {
 		try {
-			const input = buildAnkiInput(sentence);
-			try {
-				const dictResult = await dictionaryService.search(input.word, 1, dictionaryLanguage);
-				if (dictResult.entries.length > 0) {
-					input.wordDefinition = dictResult.entries[0].gloss;
-				}
-			} catch (e) {
-				console.warn('Failed to fetch dictionary definition for Anki', e);
+			const dictResult = await dictionaryService.search(input.word, 1, dictionaryLanguage);
+			if (dictResult.entries.length > 0) {
+				input.wordDefinition = dictResult.entries[0].gloss;
 			}
-
-			ankiService.setUrl($configStore.anki.url);
-			await ankiService.openAddCard($configStore.anki, input);
-			statusMessage = 'Anki Add window opened.';
-		} catch (error) {
-			errorMessage = error instanceof Error ? error.message : 'Failed to open Anki.';
-		} finally {
-			isExporting = null;
+		} catch (e) {
+			console.warn('Failed to fetch dictionary definition for Anki', e);
 		}
 	}
 
-	async function exportToAnki(sentence: StoredSentence) {
+	async function openAnkiAddCard(input: AnkiNoteInput, exportKey: string): Promise<void> {
 		clearMessages();
 		if (!$configStore.anki.deckName || !$configStore.anki.noteType) {
 			errorMessage = 'Set your Anki deck and note type before exporting.';
 			return;
 		}
 
-		isExporting = sentence.id;
+		isExporting = exportKey;
 		try {
-			const input = buildAnkiInput(sentence);
 			ankiService.setUrl($configStore.anki.url);
 
 			const wordField = $configStore.anki.fields.word;
 			const deckQuery = `deck:"${$configStore.anki.deckName}"`;
 			const duplicateCheck = await ankiService.findNotes(`${deckQuery} "${wordField}:${input.word}"`).catch(() => []);
-			
+
 			if (duplicateCheck && duplicateCheck.length > 0) {
-				duplicateSentence = sentence;
+				pendingDuplicate = { input, exportKey };
 				showDuplicateModal = true;
 				isExporting = null;
 				return;
-			}
-
-			try {
-				const dictResult = await dictionaryService.search(input.word, 1, dictionaryLanguage);
-				if (dictResult.entries.length > 0) {
-					input.wordDefinition = dictResult.entries[0].gloss;
-				}
-			} catch (e) {
-				console.warn('Failed to fetch dictionary definition for Anki', e);
 			}
 
 			await ankiService.openAddCard($configStore.anki, input);
@@ -206,6 +197,34 @@ import { highlightTargetWord } from '$lib/utils/highlight';
 			if (showDuplicateModal === false) {
 				isExporting = null;
 			}
+		}
+	}
+
+	async function exportToAnki(sentence: StoredSentence) {
+		const input = buildSentenceAnkiInput(sentence);
+		await enrichWordDefinition(input);
+		await openAnkiAddCard(input, sentenceExportKey(sentence));
+	}
+
+	async function exportWordToAnki(entry: DictionaryEntry) {
+		await openAnkiAddCard(buildWordAnkiInput(entry), entryExportKey(entry));
+	}
+
+	async function confirmDuplicateExport() {
+		if (!pendingDuplicate) return;
+		const { input, exportKey } = pendingDuplicate;
+		pendingDuplicate = null;
+		showDuplicateModal = false;
+
+		isExporting = exportKey;
+		try {
+			ankiService.setUrl($configStore.anki.url);
+			await ankiService.openAddCard($configStore.anki, input);
+			statusMessage = 'Anki Add window opened.';
+		} catch (error) {
+			errorMessage = error instanceof Error ? error.message : 'Failed to open Anki.';
+		} finally {
+			isExporting = null;
 		}
 	}
 
@@ -250,6 +269,8 @@ import { highlightTargetWord } from '$lib/utils/highlight';
 		query={sidebarQuery}
 		language={dictionaryLanguage}
 		onLanguageChange={(language) => dictionaryLanguage = language}
+		onExportWord={exportWordToAnki}
+		exportingEntSeq={exportingEntSeq}
 	/>
 	<main class="main">
 		<header class="hero">
@@ -365,8 +386,8 @@ import { highlightTargetWord } from '$lib/utils/highlight';
 								<Download size={14} />
 								Download audio
 							</a>
-							<button type="button" class="action-btn primary" onclick={() => exportToAnki(sentence)} disabled={isExporting === sentence.id}>
-								{#if isExporting === sentence.id}
+							<button type="button" class="action-btn primary" onclick={() => exportToAnki(sentence)} disabled={isExporting === sentenceExportKey(sentence)}>
+								{#if isExporting === sentenceExportKey(sentence)}
 									<Loader2 size={14} class="spinner" />
 									Exporting
 								{:else}
@@ -388,8 +409,8 @@ import { highlightTargetWord } from '$lib/utils/highlight';
 	title="Duplicate Card Detected"
 	message="It looks like this card already exists in your Anki deck. Do you want to add it anyway?"
 	confirmText="Add Anyway"
-	onConfirm={confirmExport}
-	onCancel={() => { duplicateSentence = null; showDuplicateModal = false; }}
+	onConfirm={confirmDuplicateExport}
+	onCancel={() => { pendingDuplicate = null; showDuplicateModal = false; }}
 />
 
 {#if isLoadingKanji || selectedKanji || kanjiError}
