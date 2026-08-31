@@ -1,14 +1,23 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { Languages, BookText, Ghost, SearchX } from 'lucide-svelte';
+	import { Languages, BookText, Ghost, SearchX, ExternalLink, Loader2 } from 'lucide-svelte';
 	import { dictionaryService } from '$lib/services/dictionary';
 	import type { DictionaryEntry, DictionaryLanguage, KanjiEntry } from '$lib/types';
 
-	let { onKanjiSelect, query = '', language = 'en', onLanguageChange } = $props<{
+	let {
+		onKanjiSelect,
+		query = '',
+		language = 'en',
+		onLanguageChange,
+		onExportWord,
+		exportingEntSeq = null
+	} = $props<{
 		onKanjiSelect: (literal: string) => void;
 		query?: string;
 		language?: DictionaryLanguage;
 		onLanguageChange: (language: DictionaryLanguage) => void;
+		onExportWord: (entry: DictionaryEntry) => Promise<void> | void;
+		exportingEntSeq?: number | null;
 	}>();
 
 	let entries = $state<DictionaryEntry[]>([]);
@@ -149,6 +158,20 @@
 									<BookText size={12} />
 									<span>{entry.partsOfSpeech.join(' · ') || 'Unknown'}</span>
 								</div>
+								<button
+									type="button"
+									class="export-btn"
+									onclick={() => onExportWord(entry)}
+									disabled={exportingEntSeq === entry.entSeq}
+								>
+									{#if exportingEntSeq === entry.entSeq}
+										<Loader2 size={12} class="spinner" />
+										Exporting
+									{:else}
+										<ExternalLink size={12} />
+										Export to Anki
+									{/if}
+								</button>
 							</article>
 						{/each}
 					</div>
@@ -350,6 +373,32 @@
 		border-radius: 0.25rem;
 	}
 
+	.export-btn {
+		margin-top: 0.65rem;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		border: 1px solid #334155;
+		background: #0f172a;
+		color: #e2e8f0;
+		padding: 0.35rem 0.6rem;
+		font-size: 0.72rem;
+		border-radius: 0.5rem;
+		cursor: pointer;
+		transition: all 0.2s;
+	}
+
+	.export-btn:hover:not(:disabled) {
+		border-color: #2563eb;
+		background: rgba(37, 99, 235, 0.18);
+		color: #bfdbfe;
+	}
+
+	.export-btn:disabled {
+		opacity: 0.7;
+		cursor: default;
+	}
+
 	.skeleton-title {
 		height: 0.8rem;
 		width: 6rem;
@@ -416,7 +465,8 @@
 		50% { opacity: 1; }
 	}
 
-	:global(.spin) {
+	:global(.spin),
+	:global(.spinner) {
 		animation: spin 1s linear infinite;
 	}
 
