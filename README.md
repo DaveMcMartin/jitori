@@ -64,10 +64,6 @@ To deploy your own instance to Cloudflare:
 
 Update `wrangler.toml` with your specific `database_id` and R2 bucket details.
 
-### Anki
-
-Configure your deck name and note type in the app settings sidebar.
-
 ## Project Structure
 - `src/`: SvelteKit application code.
 - `scripts/`: Data parsing and D1/R2 management tooling.
